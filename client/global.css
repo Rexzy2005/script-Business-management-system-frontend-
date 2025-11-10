@@ -1,0 +1,133 @@
+/** @import must precede all other statements */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /**
+   * Script theme (HSL format required by tailwind.config.ts)
+  */
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 217 16% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 217 16% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 217 16% 12%;
+
+    --primary: 142 56% 35%; /* vibrant green */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 21 90% 55%; /* warm orange */
+    --secondary-foreground: 217 16% 12%;
+
+    --muted: 210 16% 96%;
+    --muted-foreground: 215 12% 45%;
+
+    --accent: 200 100% 95%;
+    --accent-foreground: 217 16% 12%;
+
+    --destructive: 354 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 16% 90%;
+    --input: 210 16% 96%;
+    --ring: 142 56% 35%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 210 20% 98%;
+
+    --sidebar-foreground: 217 16% 12%;
+
+    --sidebar-primary: 142 56% 35%;
+
+    --sidebar-primary-foreground: 0 0% 100%;
+
+    --sidebar-accent: 200 100% 95%;
+
+    --sidebar-accent-foreground: 217 16% 12%;
+
+    --sidebar-border: 210 12% 92%;
+
+    --sidebar-ring: 142 56% 35%;
+  }
+
+  .dark {
+    --background: 217 16% 12%;
+    --foreground: 210 20% 98%;
+
+    --card: 217 16% 12%;
+    --card-foreground: 210 20% 98%;
+
+    --popover: 217 16% 12%;
+    --popover-foreground: 210 20% 98%;
+
+    --primary: 142 56% 45%;
+    --primary-foreground: 217 16% 12%;
+
+    --secondary: 21 90% 45%;
+    --secondary-foreground: 210 20% 98%;
+
+    --muted: 217 16% 15%;
+    --muted-foreground: 215 10% 70%;
+
+    --accent: 217 16% 15%;
+    --accent-foreground: 210 20% 98%;
+
+    --destructive: 354 84% 40%;
+    --destructive-foreground: 210 20% 98%;
+
+    --border: 217 16% 15%;
+    --input: 217 16% 15%;
+    --ring: 142 56% 45%;
+    --sidebar-background: 217 16% 12%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-primary: 142 56% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 16% 15%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 217 16% 15%;
+    --sidebar-ring: 142 56% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family:
+      Inter,
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      "Segoe UI",
+      Roboto,
+      "Helvetica Neue",
+      Arial;
+  }
+
+  a {
+    @apply text-primary underline-offset-4 hover:underline;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    line-height: 1.05;
+  }
+
+  pre,
+  code {
+    overflow-x: auto;
+    white-space: pre;
+  }
+}
