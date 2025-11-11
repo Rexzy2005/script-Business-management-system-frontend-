@@ -210,7 +210,7 @@ export default function Analytics() {
             <h3 className="font-semibold text-sm md:text-base mb-4">
               Monthly Sales Performance
             </h3>
-            <div className="w-full h-80">
+            <div className="w-full h-64 md:h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={monthlyChartData}>
                   <CartesianGrid
@@ -255,7 +255,7 @@ export default function Analytics() {
             <h3 className="font-semibold text-sm md:text-base mb-4">
               Sales by Product
             </h3>
-            <div className="w-full h-80">
+            <div className="w-full h-64 md:h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -291,7 +291,7 @@ export default function Analytics() {
             <h3 className="font-semibold text-sm md:text-base mb-4">
               Product Sales Comparison
             </h3>
-            <div className="w-full h-80">
+            <div className="w-full h-64 md:h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={productSalesData}>
                   <CartesianGrid

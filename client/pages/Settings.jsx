@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { getUser, fetchCurrentUser } from "@/lib/auth";
+import { getUser, fetchCurrentUser, signOut } from "@/lib/auth";
 import { updateCurrentUser } from "@/lib/apiAuth";
 import { useNavigate } from "react-router-dom";
 import { Save, X } from "lucide-react";
@@ -287,7 +287,12 @@ export default function Settings() {
               variant="outline"
               size="sm"
               onClick={async () => {
-                await signOut();
+                try {
+                  await signOut();
+                  toast.success("Signed out");
+                } catch (e) {
+                  toast.error("Sign out failed");
+                }
                 navigate("/signin");
               }}
               className="text-xs md:text-sm"

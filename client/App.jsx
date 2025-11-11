@@ -13,6 +13,7 @@ import Pricing from "./pages/Pricing";
 import Solutions from "./pages/Solutions";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import PlanConfirmation from "./pages/PlanConfirmation";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
@@ -50,6 +51,7 @@ const App = () => (
           <Route path="/solutions" element={<Solutions />} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/signup/plan" element={<PlanConfirmation />} />
           <Route
             path="/dashboard"
             element={

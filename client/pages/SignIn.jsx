@@ -55,6 +55,9 @@ export default function SignIn() {
         throw new Error(response.message || "Login failed");
       }
 
+      // show success toast
+      toast.success("Signed in successfully");
+
       const u = getUser();
 
       if (!u && response.user) {
@@ -87,6 +90,8 @@ export default function SignIn() {
     }
     setForgotOpen(false);
     setForgotEmail("");
+    // show confirmation toast
+    toast.success("Password reset link sent");
   };
 
   return (

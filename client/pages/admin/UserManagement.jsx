@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { toast } from "sonner";
 import AdminLayout from "@/components/admin/AdminLayout";
 import {
   Card,
@@ -68,7 +69,18 @@ const UserManagement = () => {
   });
 
   const handleResetPassword = (userId) => {
-    alert(`Password reset link sent to user ${userId}`);
+    // replace alert with toast notification for consistency
+    // show admin feedback that reset link was sent
+    // import toast from sonner at top if not present
+    try {
+      // In a real implementation we'd call an API endpoint here.
+      // For now show a toast acknowledging the action.
+      // eslint-disable-next-line no-undef
+      toast.success(`Password reset link sent to user ${userId}`);
+    } catch (e) {
+      // fallback
+      alert(`Password reset link sent to user ${userId}`);
+    }
   };
 
   const handleSuspend = (userId) => {
