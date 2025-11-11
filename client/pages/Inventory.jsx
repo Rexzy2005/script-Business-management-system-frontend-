@@ -16,6 +16,7 @@ import {
   getTopSelling,
 } from "@/lib/apiInventory";
 import { inventoryLimit, canAccessStats } from "@/lib/plans";
+import { emit, on } from "@/lib/eventBus";
 
 export default function Inventory() {
   const [items, setItems] = useState([]);
@@ -70,8 +71,16 @@ export default function Inventory() {
 
     // start background stock monitor (runs twice daily by default)
     startStockMonitor({ intervalMs: 1000 * 60 * 60 * 12 });
+
+    // Subscribe to sale-added event to refresh inventory when sales are added from Sales page
+    const unsubscribe = on("sale-added", async () => {
+      const items = await getInventory();
+      setItems(items);
+    });
+
     return () => {
       stopStockMonitor();
+      unsubscribe();
     };
   }, []);
 
@@ -200,6 +209,8 @@ export default function Inventory() {
     await refresh();
     setShowSale(false);
     toast.success(`Sale recorded: ${record.id}`);
+    // Emit event so other pages (Dashboard, Sales, Analytics) refresh their data
+    emit("sale-added", record);
   };
 
   return (

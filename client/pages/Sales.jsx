@@ -9,6 +9,7 @@ import {
 import { getUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { emit, on } from "@/lib/eventBus";
 
 export default function Sales() {
   const [sales, setSales] = useState([]);
@@ -32,6 +33,18 @@ export default function Sales() {
       }
     };
     loadData();
+
+    // Subscribe to sale-added event to refresh sales list if a sale is added from Inventory or another page
+    const unsubscribe = on("sale-added", async () => {
+      const updatedSales = await getSales();
+      const updatedItems = await getInventory();
+      setSales(updatedSales);
+      setItems(updatedItems);
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   // Auto-calculate amount when sku or qty changes
@@ -78,6 +91,8 @@ export default function Sales() {
     setItems(updatedItems);
     setShowSaleForm(false);
     toast.success(`Sale recorded: ${record.id}`);
+    // Emit event so other pages (Dashboard, Inventory, Analytics) refresh their data
+    emit("sale-added", record);
   };
 
   const formatCurrency = (n) => {
