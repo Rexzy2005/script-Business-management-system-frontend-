@@ -12,11 +12,27 @@ export async function register(userData) {
       businessType: userData.businessType,
     });
 
-    if (response.token) {
-      setAuthToken(response.token);
+    // Normalize token location (some backends nest payload under `data`)
+    const token =
+      response?.token || response?.data?.token || response?.data?.accessToken;
+    if (token) setAuthToken(token);
+
+    // Also persist refreshToken if present
+    const refreshToken = response?.refreshToken || response?.data?.refreshToken;
+    if (refreshToken) {
+      localStorage.setItem(
+        "script_refresh_token",
+        JSON.stringify(refreshToken),
+      );
     }
 
-    return response;
+    // Return normalized shape for callers
+    return {
+      ...response,
+      user: response?.user || response?.data?.user || response?.data || null,
+      token: token || null,
+      refreshToken: refreshToken || null,
+    };
   } catch (error) {
     throw new Error(error.message || "Registration failed");
   }
@@ -29,18 +45,24 @@ export async function login(email, password) {
       password,
     });
 
-    if (response.token) {
-      setAuthToken(response.token);
-    }
+    const token =
+      response?.token || response?.data?.token || response?.data?.accessToken;
+    if (token) setAuthToken(token);
 
-    if (response.refreshToken) {
+    const refreshToken = response?.refreshToken || response?.data?.refreshToken;
+    if (refreshToken) {
       localStorage.setItem(
         "script_refresh_token",
-        JSON.stringify(response.refreshToken),
+        JSON.stringify(refreshToken),
       );
     }
 
-    return response;
+    return {
+      ...response,
+      user: response?.user || response?.data?.user || response?.data || null,
+      token: token || null,
+      refreshToken: refreshToken || null,
+    };
   } catch (error) {
     throw new Error(error.message || "Login failed");
   }
@@ -73,5 +95,17 @@ export async function updateCurrentUser(updates) {
     return response?.data || response?.user || response || null;
   } catch (error) {
     throw new Error(error.message || "Failed to update current user");
+  }
+}
+
+export async function updatePassword(currentPassword, newPassword) {
+  try {
+    const response = await apiPut(API_ENDPOINTS.AUTH_UPDATE_PASSWORD, {
+      currentPassword,
+      newPassword,
+    });
+    return response;
+  } catch (error) {
+    throw new Error(error.message || "Failed to update password");
   }
 }
