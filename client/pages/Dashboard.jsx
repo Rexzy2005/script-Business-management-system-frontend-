@@ -52,7 +52,7 @@ export default function Dashboard() {
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-extrabold">
-            Welcome back{user ? `, ${user.name}` : ""}!
+            Welcome CEO{user?.businessName ? ` - ${user.businessName}` : ""}
           </h1>
           <p className="mt-1 text-xs md:text-sm text-muted-foreground">
             Here's a quick look at your business.

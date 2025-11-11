@@ -23,15 +23,16 @@ export default function Layout({ children, fullWidth = false }) {
     };
   }, [sidebarOpen]);
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     try {
-      signOut();
+      await signOut();
       toast.success("Signed out");
     } catch (e) {
       toast.error("Sign out failed");
+    } finally {
+      setSidebarOpen(false);
+      navigate("/", { replace: true });
     }
-    setSidebarOpen(false);
-    navigate("/signin");
   };
 
   const protectedLinks = [

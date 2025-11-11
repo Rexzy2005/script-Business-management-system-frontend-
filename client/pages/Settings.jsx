@@ -230,52 +230,6 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Subscription Plan */}
-          <div className="bg-card border border-border rounded-lg p-6">
-            <h3 className="font-semibold text-lg mb-4">Subscription Plan</h3>
-
-            <div className="space-y-4">
-              <div>
-                <div className="text-sm font-medium mb-1">Current Plan</div>
-                <div className="text-2xl font-bold text-primary">Standard</div>
-                <div className="text-xs text-muted-foreground mt-2">
-                  ₦500/month or ₦5,000/year — Renews on Dec 15, 2024
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-border">
-                <div className="text-sm font-medium mb-3">Plan benefits:</div>
-                <ul className="text-xs text-muted-foreground space-y-2">
-                  <li>✓ Unlimited invoices</li>
-                  <li>✓ Unlimited inventory management</li>
-                  <li>✓ Advanced analytics</li>
-                  <li>✓ Team collaboration</li>
-                  <li>✓ Priority support</li>
-                </ul>
-              </div>
-
-              <div className="mt-6 flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => toast.info("Manage billing...")}
-                  className="text-xs md:text-sm"
-                >
-                  Manage billing
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => toast.info("Invoices...")}
-                  className="text-xs md:text-sm"
-                >
-                  View invoices
-                </Button>
-              </div>
-            </div>
-          </div>
-
           {/* Account Settings */}
           <div className="bg-card border border-border rounded-lg p-6">
             <h3 className="font-semibold text-lg mb-4">Account</h3>
@@ -293,7 +247,7 @@ export default function Settings() {
                 } catch (e) {
                   toast.error("Sign out failed");
                 }
-                navigate("/signin");
+                navigate("/", { replace: true });
               }}
               className="text-xs md:text-sm"
             >
