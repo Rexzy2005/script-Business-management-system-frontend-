@@ -3,6 +3,7 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { getInventory, getSales, getClients, getExpenses } from "@/lib/data";
 import { useNavigate } from "react-router-dom";
+import { on } from "@/lib/eventBus";
 
 function parseCurrencyValue(val) {
   if (typeof val === "number") return val;
@@ -41,8 +42,27 @@ export default function ProductDashboard() {
         console.warn(`Failed to load dashboard data: ${e?.message || e}`);
       }
     })();
+
+    // Subscribe to sale-added event to refresh data when sales are added from other pages
+    const unsubscribe = on("sale-added", async () => {
+      try {
+        const inv = await getInventory();
+        const s = await getSales();
+        const c = await getClients();
+        const e = await getExpenses();
+        if (!mounted) return;
+        setInventory(inv || []);
+        setSales(s || []);
+        setClients(c || []);
+        setExpenses(e || []);
+      } catch (e) {
+        console.warn(`Failed to refresh dashboard data: ${e?.message || e}`);
+      }
+    });
+
     return () => {
       mounted = false;
+      unsubscribe();
     };
   }, []);
 
