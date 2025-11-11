@@ -34,6 +34,21 @@ export default function Sales() {
     loadData();
   }, []);
 
+  // Auto-calculate amount when sku or qty changes
+  useEffect(() => {
+    const item = items.find((i) => i.sku === form.sku);
+    if (!item) return;
+    const qty = Number(form.qty) || 0;
+    const pricePerPiece = Number(
+      item.pricePerPiece ?? item.unitPrice ?? item.retailPrice ?? 0,
+    );
+    const bulkPrice = Number(item.bulkPrice ?? item.wholesalePrice ?? 0);
+    // prefer pricePerPiece when available
+    const unit = pricePerPiece > 0 ? pricePerPiece : bulkPrice;
+    const computed = qty * (unit || 0);
+    setForm((f) => ({ ...f, amount: computed }));
+  }, [form.sku, form.qty, items]);
+
   const openSaleForm = () => {
     setForm({ sku: items[0]?.sku || "", qty: 1, amount: 0, customer: "" });
     setShowSaleForm(true);
@@ -48,7 +63,7 @@ export default function Sales() {
     if (form.qty > item.qty) return toast.error("Not enough stock");
 
     const user = getUser();
-    const record = addSale({
+    const record = await addSale({
       itemSku: item.sku,
       itemName: item.name,
       qty: form.qty,
@@ -63,6 +78,23 @@ export default function Sales() {
     setItems(updatedItems);
     setShowSaleForm(false);
     toast.success(`Sale recorded: ${record.id}`);
+  };
+
+  const formatCurrency = (n) => {
+    if (!n && n !== 0) return "₦0";
+    const num = Number(n) || 0;
+    return `₦${Math.round(num).toLocaleString()}`;
+  };
+
+  const formatDate = (d) => {
+    try {
+      if (!d) return "";
+      const dt = new Date(d);
+      if (isNaN(dt.getTime())) return String(d);
+      return dt.toLocaleString();
+    } catch (e) {
+      return String(d);
+    }
   };
 
   return (
@@ -110,24 +142,38 @@ export default function Sales() {
               </tr>
             </thead>
             <tbody>
-              {sales.map((s) => (
-                <tr
-                  key={s.id}
-                  className="border-t border-border hover:bg-accent/50"
-                >
-                  <td className="px-3 md:px-4 py-3">{s.id}</td>
-                  <td className="px-3 md:px-4 py-3">
-                    {s.itemName} ({s.itemSku})
-                  </td>
-                  <td className="px-3 md:px-4 py-3">{s.qty}</td>
-                  <td className="px-3 md:px-4 py-3">
-                    {s.amount ? `₦${s.amount}` : "—"}
-                  </td>
-                  <td className="px-3 md:px-4 py-3">
-                    {new Date(s.createdAt).toLocaleString()}
-                  </td>
-                </tr>
-              ))}
+              {sales.map((s, idx) => {
+                // support new Sale model (items array) and legacy single-item sales
+                const firstItem =
+                  Array.isArray(s.items) && s.items.length > 0
+                    ? s.items[0]
+                    : null;
+                const displayId = s._id || s.id || s.transactionId || "";
+                const itemName = firstItem?.name || s.itemName || s.name || "";
+                const qty = firstItem?.qty ?? s.qty ?? 0;
+                const amount =
+                  s.total ??
+                  s.subtotal ??
+                  s.amount ??
+                  (firstItem ? firstItem.lineTotal : 0);
+                const date = s.createdAt || s.date || s.created || null;
+                const rowNumber = idx + 1;
+
+                return (
+                  <tr
+                    key={displayId || `sale-${rowNumber}`}
+                    className="border-t border-border hover:bg-accent/50"
+                  >
+                    <td className="px-3 md:px-4 py-3">{rowNumber}</td>
+                    <td className="px-3 md:px-4 py-3">{itemName}</td>
+                    <td className="px-3 md:px-4 py-3">{qty}</td>
+                    <td className="px-3 md:px-4 py-3">
+                      {formatCurrency(amount)}
+                    </td>
+                    <td className="px-3 md:px-4 py-3">{formatDate(date)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

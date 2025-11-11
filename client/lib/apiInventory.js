@@ -25,7 +25,8 @@ export async function createProduct(productData) {
       unitType: productData.unitType,
       lowStockThreshold: productData.lowStockThreshold,
     });
-    return response?.data || response || null;
+    // backend returns { success: true, data: { item } }
+    return response?.data?.item || response?.data || response || null;
   } catch (error) {
     throw new Error(error.message || "Failed to create product");
   }
@@ -37,7 +38,16 @@ export async function createProduct(productData) {
 export async function getAllProducts() {
   try {
     const response = await apiGet(API_ENDPOINTS.PRODUCTS_LIST);
-    return response?.data || [];
+    // backend may return { success: true, data: { items, pagination } }
+    if (!response) return [];
+    if (Array.isArray(response)) return response;
+    if (response.data) {
+      if (Array.isArray(response.data)) return response.data;
+      if (Array.isArray(response.data.items)) return response.data.items;
+      // some endpoints might return data.items directly
+      return response.data.items || [];
+    }
+    return [];
   } catch (error) {
     console.warn(`Failed to get products: ${error?.message || error}`);
     return [];
@@ -50,7 +60,10 @@ export async function getAllProducts() {
 export async function getOutOfStock() {
   try {
     const response = await apiGet(API_ENDPOINTS.PRODUCTS_LOW_STOCK);
-    return response?.data || [];
+    if (!response) return [];
+    if (response.data) return response.data.items || response.data || [];
+    if (Array.isArray(response)) return response;
+    return [];
   } catch (error) {
     console.warn(
       `Failed to get out-of-stock products: ${error?.message || error}`,
@@ -65,7 +78,10 @@ export async function getOutOfStock() {
 export async function getLowStock() {
   try {
     const response = await apiGet(API_ENDPOINTS.PRODUCTS_LOW_STOCK);
-    return response?.data || [];
+    if (!response) return [];
+    if (response.data) return response.data.items || response.data || [];
+    if (Array.isArray(response)) return response;
+    return [];
   } catch (error) {
     console.warn(
       `Failed to get low-stock products: ${error?.message || error}`,
@@ -82,7 +98,9 @@ export async function getProduct(id) {
     const response = await apiGet(
       API_ENDPOINTS.PRODUCTS_GET.replace(":id", id),
     );
-    return response?.data || null;
+    // backend returns { success: true, data: { item } }
+    if (!response) return null;
+    return response.data?.item || response.data || null;
   } catch (error) {
     throw new Error(error.message || "Failed to get product");
   }
@@ -106,7 +124,7 @@ export async function updateProduct(id, productData) {
         lowStockThreshold: productData.lowStockThreshold,
       },
     );
-    return response?.data || response || null;
+    return response?.data?.item || response?.data || response || null;
   } catch (error) {
     throw new Error(error.message || "Failed to update product");
   }
@@ -154,7 +172,8 @@ export async function updateStock(id, quantityChange, reason = "") {
 export async function getStatistics() {
   try {
     const response = await apiGet(API_ENDPOINTS.PRODUCTS_STATS);
-    return response?.data || {};
+    if (!response) return {};
+    return response.data || {};
   } catch (error) {
     console.warn(
       `Failed to fetch inventory statistics: ${error?.message || error}`,
@@ -170,7 +189,11 @@ export async function getStatistics() {
 export async function exportInventory() {
   try {
     const response = await apiGet(API_ENDPOINTS.PRODUCTS_LIST);
-    const items = response?.data || [];
+    let items = [];
+    if (!response) items = [];
+    else if (Array.isArray(response)) items = response;
+    else if (response.data) items = response.data.items || response.data || [];
+    else items = [];
 
     // Define CSV headers
     const headers = [
@@ -196,7 +219,9 @@ export async function exportInventory() {
     };
 
     const rows = items.map((it) =>
-      headers.map((h) => escapeCsv(it[h] ?? "")).join(","),
+      headers
+        .map((h) => escapeCsv(it[h] ?? it[h === "qty" ? "quantity" : h] ?? ""))
+        .join(","),
     );
 
     return [headers.join(","), ...rows].join("\n");

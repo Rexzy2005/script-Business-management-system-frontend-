@@ -8,6 +8,9 @@ import * as apiInventory from "./apiInventory";
 
 import { apiPost } from "./api";
 import { API_ENDPOINTS } from "./apiConfig";
+import * as apiSales from "./apiSales";
+import * as apiExpenses from "./apiExpenses";
+import { getUser } from "./auth";
 
 const INVENTORY_KEY = "script_inventory";
 const SALES_KEY = "script_sales";
@@ -33,14 +36,27 @@ export async function getInventory() {
   try {
     const products = await apiInventory.getAllProducts();
     if (products && products.length > 0) {
-      inventoryCache = products.map((p) => ({
-        sku: p.productId,
-        name: p.name,
-        qty: p.quantity,
-        value: `₦${(p.quantity * p.unitPrice).toLocaleString()}`,
-        _id: p._id,
-        ...p,
-      }));
+      inventoryCache = products.map((p) => {
+        const sku =
+          p.sku ||
+          p.productId ||
+          p.productId?.toString() ||
+          p._id ||
+          `P-${Date.now()}`;
+        const qty = p.qty ?? p.quantity ?? p.quantityInStock ?? 0;
+        const unitPrice =
+          p.retailPrice ?? p.unitPrice ?? p.pricePerPiece ?? p.bulkPrice ?? 0;
+        const value =
+          p.value || `₦${(Number(qty) * Number(unitPrice)).toLocaleString()}`;
+        return {
+          sku,
+          name: p.name || p.productName || "",
+          qty,
+          value,
+          _id: p._id || p.id,
+          ...p,
+        };
+      });
       return inventoryCache;
     }
   } catch (error) {
@@ -96,10 +112,10 @@ export async function updateInventoryQty(sku, delta) {
     if (item._id) {
       if (delta < 0) {
         try {
-          // record removal using API that maintains stockHistory
-          await apiInventory.removeStock(
+          // use inventory API to update stock by negative delta (server maintains history)
+          await apiInventory.updateStock(
             item._id,
-            Math.abs(delta),
+            -Math.abs(delta),
             "Adjustment from app",
           );
         } catch (e) {
@@ -110,10 +126,20 @@ export async function updateInventoryQty(sku, delta) {
           });
         }
       } else {
-        await apiInventory.updateProduct(item._id, {
-          ...item,
-          quantity: newQty,
-        });
+        // add stock via updateStock (positive delta)
+        try {
+          await apiInventory.updateStock(
+            item._id,
+            delta,
+            "Adjustment from app",
+          );
+        } catch (e) {
+          // fallback to direct update if updateStock not available
+          await apiInventory.updateProduct(item._id, {
+            ...item,
+            quantity: newQty,
+          });
+        }
       }
     }
   } catch (error) {
@@ -125,13 +151,91 @@ export async function updateInventoryQty(sku, delta) {
   return true;
 }
 
-export function getSales() {
+export async function getSales() {
   if (salesCache) return salesCache;
+
+  const user = getUser();
+  if (user) {
+    try {
+      const resp = await apiSales.getAllSales();
+      // apiSales.getAllSales may return { items, pagination } or array
+      let items = [];
+      if (!resp) items = [];
+      else if (Array.isArray(resp)) items = resp;
+      else if (resp.items) items = resp.items;
+      else if (Array.isArray(resp.data)) items = resp.data;
+      else if (resp.data && Array.isArray(resp.data.items))
+        items = resp.data.items;
+      else items = resp.data?.items || [];
+
+      salesCache = items.map((s) => ({
+        id: s._id || s.id,
+        ...s,
+      }));
+      saveSales(salesCache);
+      return salesCache;
+    } catch (e) {
+      console.warn("Failed to fetch sales from API, falling back to local:", e);
+    }
+  }
+
   return read(SALES_KEY, []);
 }
 
-export function addSale(sale) {
-  const entries = getSales();
+export async function addSale(sale) {
+  const user = getUser();
+  // If user is logged in, try to create sale via API
+  if (user) {
+    try {
+      // Convert legacy single-item sale to API payload
+      let payload;
+      if (sale && sale.items) {
+        payload = sale;
+      } else {
+        const unitPrice = sale.qty
+          ? Number(sale.amount) / Number(sale.qty)
+          : Number(sale.amount);
+        payload = {
+          items: [
+            {
+              sku: sale.itemSku || sale.sku,
+              name: sale.itemName || sale.name,
+              qty: Number(sale.qty) || 1,
+              unitPrice: unitPrice || 0,
+              lineTotal: Number(sale.amount) || 0,
+            },
+          ],
+          subtotal: Number(sale.amount) || 0,
+          discount: 0,
+          tax: 0,
+          total: Number(sale.amount) || 0,
+          paymentMethod: sale.paymentMethod || "cash",
+          paymentStatus:
+            sale.paymentStatus ||
+            (Number(sale.amount) > 0 ? "paid" : "pending"),
+          amountPaid: Number(sale.amount) || 0,
+          amountDue: 0,
+          customerName: sale.customer || sale.customerName || "",
+          notes: sale.notes || "",
+        };
+      }
+
+      const resp = await apiSales.createSale(payload);
+      const created = resp?.sale || resp?.data?.sale || resp?.data || resp;
+      // Refresh cache
+      salesCache = null;
+      await getSales();
+      return created || { id: `S-${Date.now()}`, ...sale };
+    } catch (err) {
+      console.warn(
+        "Failed to create sale via API, falling back to local:",
+        err,
+      );
+      // continue to local fallback
+    }
+  }
+
+  const entries = await getSales();
   const record = {
     ...sale,
     id: `S-${Date.now()}`,
@@ -141,6 +245,10 @@ export function addSale(sale) {
   salesCache = entries;
   write(SALES_KEY, entries);
   return record;
+}
+
+function saveSales(sales) {
+  write(SALES_KEY, sales);
 }
 
 const BOOKINGS_KEY = "script_bookings";
@@ -424,7 +532,25 @@ export function addClient(client) {
 // Expenses Management
 const EXPENSES_KEY = "script_expenses";
 
-export function getExpenses() {
+export async function getExpenses() {
+  const user = getUser();
+  if (user) {
+    try {
+      const resp = await apiExpenses.getExpensesFromApi();
+      let items = [];
+      if (!resp) items = [];
+      else if (Array.isArray(resp)) items = resp;
+      else if (resp.items) items = resp.items;
+      else if (Array.isArray(resp.data)) items = resp.data;
+      else items = resp.data?.items || [];
+      return items;
+    } catch (e) {
+      console.warn(
+        "Failed to fetch expenses from API, falling back to local:",
+        e,
+      );
+    }
+  }
   return read(EXPENSES_KEY, []);
 }
 
@@ -432,7 +558,20 @@ export function saveExpenses(expenses) {
   write(EXPENSES_KEY, expenses);
 }
 
-export function addExpense(expense) {
+export async function addExpense(expense) {
+  const user = getUser();
+  if (user) {
+    try {
+      const resp = await apiExpenses.createExpense(expense);
+      const created =
+        resp?.expense || resp?.data?.expense || resp?.data || resp;
+      return created;
+    } catch (e) {
+      console.warn("Failed to create expense via API, creating locally:", e);
+      // fallback to local
+    }
+  }
+
   const expenses = getExpenses();
   const newExpense = {
     ...expense,
@@ -443,8 +582,20 @@ export function addExpense(expense) {
   return newExpense;
 }
 
-export function deleteExpense(id) {
+export async function deleteExpense(id) {
+  const user = getUser();
+  if (user) {
+    try {
+      await apiExpenses.deleteExpenseApi(id);
+      return true;
+    } catch (e) {
+      console.warn("Failed to delete expense via API, deleting locally:", e);
+      // continue to local fallback
+    }
+  }
+
   const expenses = getExpenses();
   const filtered = expenses.filter((e) => e.id !== id);
   saveExpenses(filtered);
+  return true;
 }

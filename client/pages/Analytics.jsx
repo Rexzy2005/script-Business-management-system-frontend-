@@ -24,48 +24,71 @@ const COLORS = ["#2D7C35", "#F97316", "#06B6D4"];
 export default function Analytics() {
   const [stats, setStats] = useState(null);
   const [topSelling, setTopSelling] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     (async () => {
+      setLoading(true);
       try {
         const s = await getStatistics();
-        setStats(s);
+        setStats(s || {});
         const top = await getTopSelling();
-        setTopSelling(top);
+        setTopSelling(Array.isArray(top) ? top : []);
+        // dev debug: print raw payloads
+        try {
+          if (
+            typeof window !== "undefined" &&
+            process?.env?.NODE_ENV === "development"
+          ) {
+            console.debug("[analytics] raw stats:", s);
+            console.debug("[analytics] raw topSelling:", top);
+          }
+        } catch (e) {
+          /* ignore */
+        }
       } catch (e) {
         console.warn(`Failed to load inventory analytics: ${e?.message || e}`);
+      } finally {
+        setLoading(false);
       }
     })();
   }, [navigate]);
 
-  const monthlyData = stats?.monthly || [];
+  const monthlyData = Array.isArray(stats?.monthly) ? stats.monthly : [];
 
   const totalSales =
-    stats?.overview?.totalRevenue ??
+    Number(stats?.overview?.totalRevenue) ||
     (monthlyData.length > 0
-      ? monthlyData.reduce((acc, m) => acc + (m.sales || 0), 0)
+      ? monthlyData.reduce((acc, m) => acc + (Number(m.sales) || 0), 0)
       : 0);
-  const avgMonthlySales = Math.round(totalSales / 12);
+
+  const avgMonthlySales = Math.round(totalSales / (monthlyData.length || 12));
+
   const highestMonth =
     monthlyData.length > 0
       ? monthlyData.reduce((prev, current) =>
-          (current.sales || 0) > (prev.sales || 0) ? current : prev,
+          (Number(current.sales) || 0) > (Number(prev.sales) || 0)
+            ? current
+            : prev,
         )
       : { month: "", sales: 0, target: 0 };
+
   const lowestMonth =
     monthlyData.length > 0
       ? monthlyData.reduce((prev, current) =>
-          (current.sales || 0) < (prev.sales || 0) ? current : prev,
+          (Number(current.sales) || 0) < (Number(prev.sales) || 0)
+            ? current
+            : prev,
         )
       : { month: "", sales: 0, target: 0 };
 
   const productSalesData =
-    topSelling && topSelling.length > 0
+    Array.isArray(topSelling) && topSelling.length > 0
       ? topSelling.map((p) => ({
-          name: p.name,
-          value: p.analytics?.totalRevenue ?? 0,
-          items: p.analytics?.totalSold ?? 0,
+          name: p.name || "Unnamed",
+          value: Number(p.analytics?.totalRevenue) || 0,
+          items: Number(p.analytics?.totalSold) || 0,
         }))
       : [];
 
@@ -74,14 +97,48 @@ export default function Analytics() {
     0,
   );
 
-  const formatCurrency = (value) => {
-    return `₦${(value / 1000).toFixed(0)}k`;
+  // Normalize monthly data into chart-friendly shape
+  const monthlyChartData = (Array.isArray(monthlyData) ? monthlyData : []).map(
+    (m) => {
+      // m.month might be '2025-06' or a numeric month index. Normalize to readable label.
+      let monthLabel = m.month || m.label || "";
+      if (!monthLabel && typeof m.month === "number") {
+        const date = new Date();
+        date.setMonth(m.month - 1);
+        monthLabel = date.toLocaleString(undefined, { month: "short" });
+      }
+      return {
+        month: String(monthLabel),
+        sales: Number(m.sales) || 0,
+        target: Number(m.target) || 0,
+      };
+    },
+  );
+
+  const formatCurrencyShort = (value) => {
+    const v = Number(value) || 0;
+    if (v === 0) return "₦0";
+    if (Math.abs(v) >= 1_000_000) return `₦${(v / 1_000_000).toFixed(1)}M`;
+    if (Math.abs(v) >= 1_000) return `₦${(v / 1_000).toFixed(0)}k`;
+    return `₦${v.toLocaleString()}`;
   };
 
   const formatCurrencyFull = (value) => {
-    return `₦${value.toLocaleString()}`;
+    const v = Number(value) || 0;
+    return `₦${v.toLocaleString()}`;
   };
 
+  if (loading) {
+    return (
+      <Layout>
+        <div className="max-w-7xl mx-auto p-8 text-center text-muted-foreground">
+          Loading analytics...
+        </div>
+      </Layout>
+    );
+  }
+
+  // always render the analytics shell; charts will show empty data if no stats available
   return (
     <Layout>
       <div className="max-w-7xl mx-auto">
@@ -155,7 +212,7 @@ export default function Analytics() {
             </h3>
             <div className="w-full h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyData}>
+                <LineChart data={monthlyChartData}>
                   <CartesianGrid
                     strokeDasharray="3 3"
                     stroke="hsl(var(--border))"
@@ -168,7 +225,7 @@ export default function Analytics() {
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "0.5rem",
                     }}
-                    formatter={(value) => formatCurrency(value)}
+                    formatter={(value) => formatCurrencyFull(value)}
                   />
                   <Legend />
                   <Line
@@ -214,10 +271,13 @@ export default function Analytics() {
                     dataKey="value"
                   >
                     {productSalesData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => formatCurrency(value)} />
+                  <Tooltip formatter={(value) => formatCurrencyFull(value)} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -246,7 +306,7 @@ export default function Analytics() {
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "0.5rem",
                     }}
-                    formatter={(value) => formatCurrency(value)}
+                    formatter={(value) => formatCurrencyFull(value)}
                   />
                   <Bar dataKey="value" fill="#2D7C35" name="Total Sales" />
                 </BarChart>
@@ -279,7 +339,11 @@ export default function Analytics() {
                         {formatCurrencyFull(product.value)}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {((product.value / totalProductSales) * 100).toFixed(1)}
+                        {totalProductSales > 0
+                          ? ((product.value / totalProductSales) * 100).toFixed(
+                              1,
+                            )
+                          : "0.0"}
                         % of total
                       </div>
                     </div>

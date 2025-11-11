@@ -155,6 +155,24 @@ export default function Inventory() {
     setShowSale(true);
   };
 
+  // Auto-calculate sale amount when saleForm.sku or saleForm.qty changes
+  useEffect(() => {
+    const item = items.find((i) => i.sku === saleForm.sku);
+    if (!item) return;
+    const qty = Number(saleForm.qty) || 0;
+    const pricePerPiece = Number(
+      item.pricePerPiece ?? item.unitPrice ?? item.retailPrice ?? 0,
+    );
+    const bulkPrice = Number(item.bulkPrice ?? item.wholesalePrice ?? 0);
+    const usePiece =
+      item.saleType === "pieces" ||
+      (item.saleType === "both" && pricePerPiece > 0) ||
+      (!item.saleType && pricePerPiece > 0);
+    const unit = usePiece ? pricePerPiece : bulkPrice;
+    const computed = qty * (unit || 0);
+    setSaleForm((s) => ({ ...s, amount: computed }));
+  }, [saleForm.sku, saleForm.qty, items]);
+
   const handleSubmitSale = async (e) => {
     e.preventDefault();
     const item = items.find((i) => i.sku === saleForm.sku);
@@ -168,7 +186,7 @@ export default function Inventory() {
       (item && (item.saleType || determineSaleType(item))) ||
       saleForm.saleType ||
       "bulk";
-    const record = addSale({
+    const record = await addSale({
       itemSku: saleForm.sku,
       itemName: saleForm.name,
       qty: saleForm.qty,

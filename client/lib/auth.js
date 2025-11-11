@@ -39,8 +39,24 @@ function loadUserFromStorage() {
 export async function register(userData) {
   try {
     const response = await apiRegister(userData);
+    // Ensure token is stored (apiRegister may already set it, but be defensive)
+    if (response?.token) setAuthToken(response.token);
+
+    // If backend returned nested tokens object, try to set accessToken
+    if (!response?.token && response?.data?.tokens?.accessToken) {
+      setAuthToken(response.data.tokens.accessToken);
+    }
+
+    // Ensure current user is set; if missing, attempt to fetch from API
     if (response.user) {
       setCurrentUser(response.user);
+    } else {
+      try {
+        const fetched = await apiGetCurrentUser();
+        if (fetched) setCurrentUser(fetched);
+      } catch (e) {
+        // ignore - user will remain unauthenticated
+      }
     }
     return response;
   } catch (error) {
@@ -51,8 +67,21 @@ export async function register(userData) {
 export async function login(email, password) {
   try {
     const response = await apiLogin(email, password);
+    // Ensure token is stored (apiLogin may already set it)
+    if (response?.token) setAuthToken(response.token);
+    if (!response?.token && response?.data?.tokens?.accessToken) {
+      setAuthToken(response.data.tokens.accessToken);
+    }
+
     if (response.user) {
       setCurrentUser(response.user);
+    } else {
+      try {
+        const fetched = await apiGetCurrentUser();
+        if (fetched) setCurrentUser(fetched);
+      } catch (e) {
+        // ignore - user will remain unauthenticated
+      }
     }
     return response;
   } catch (error) {

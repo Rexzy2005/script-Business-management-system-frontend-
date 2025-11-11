@@ -29,9 +29,9 @@ export default function ProductDashboard() {
     (async () => {
       try {
         const inv = await getInventory();
-        const s = getSales();
-        const c = getClients();
-        const e = getExpenses();
+        const s = await getSales();
+        const c = await getClients();
+        const e = await getExpenses();
         if (!mounted) return;
         setInventory(inv || []);
         setSales(s || []);

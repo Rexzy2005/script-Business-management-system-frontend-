@@ -73,21 +73,40 @@ export default function Expenses() {
     toast.success("Expense deleted");
   };
 
+  // Normalize expense date to an ISO date string (YYYY-MM-DD) for comparisons
+  const getExpenseDateString = (expense) => {
+    if (!expense) return "";
+    const d = expense.date;
+    if (!d) return "";
+    if (typeof d === "string") return d;
+    if (d instanceof Date) return d.toISOString().slice(0, 10);
+    try {
+      const parsed = new Date(d);
+      if (!isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
+    } catch (e) {
+      /* ignore */
+    }
+    return String(d);
+  };
+
   const calculateMonthlyTotal = (month) => {
     return expenses
-      .filter((e) => e.date.startsWith(month))
-      .reduce((sum, e) => sum + e.amount, 0);
+      .filter((e) => getExpenseDateString(e).startsWith(month))
+      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   };
 
   const currentMonth = new Date().toISOString().slice(0, 7);
   const monthlyTotal = calculateMonthlyTotal(currentMonth);
-  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalExpenses = expenses.reduce(
+    (sum, e) => sum + (Number(e.amount) || 0),
+    0,
+  );
 
   const expensesByCategory = EXPENSE_CATEGORIES.map((cat) => ({
     ...cat,
     total: expenses
       .filter((e) => e.category === cat.id)
-      .reduce((sum, e) => sum + e.amount, 0),
+      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0),
   })).filter((cat) => cat.total > 0);
 
   const getCategoryLabel = (catId) => {
@@ -102,8 +121,24 @@ export default function Expenses() {
     return `₦${value.toLocaleString()}`;
   };
 
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr + "T00:00:00");
+  const formatDate = (dateVal) => {
+    if (!dateVal) return "";
+    let isoDate = "";
+    if (typeof dateVal === "string") {
+      isoDate = dateVal;
+    } else if (dateVal instanceof Date) {
+      isoDate = dateVal.toISOString().slice(0, 10);
+    } else {
+      try {
+        const parsed = new Date(dateVal);
+        if (!isNaN(parsed.getTime()))
+          isoDate = parsed.toISOString().slice(0, 10);
+      } catch (e) {
+        /* ignore */
+      }
+    }
+    if (!isoDate) return String(dateVal);
+    const date = new Date(isoDate + "T00:00:00");
     return date.toLocaleDateString("en-NG", {
       year: "numeric",
       month: "short",
@@ -140,7 +175,11 @@ export default function Expenses() {
               {formatCurrency(monthlyTotal)}
             </div>
             <div className="mt-3 text-xs text-muted-foreground">
-              {expenses.filter((e) => e.date.startsWith(currentMonth)).length}{" "}
+              {
+                expenses.filter((e) =>
+                  getExpenseDateString(e).startsWith(currentMonth),
+                ).length
+              }{" "}
               expenses
             </div>
           </div>
