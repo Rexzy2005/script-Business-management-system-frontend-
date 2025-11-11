@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { getExpenses, addExpense, deleteExpense } from "@/lib/data";
 import { toast } from "sonner";
+import { emit, on } from "@/lib/eventBus";
 
 const EXPENSE_CATEGORIES = [
   { id: "utilities", label: "Utilities", icon: "⚡" },
@@ -37,26 +38,40 @@ export default function Expenses() {
   useEffect(() => {
     const loadExpenses = async () => {
       const expensesData = await getExpenses();
-      setExpenses(expensesData);
+      setExpenses(expensesData || []);
     };
     loadExpenses();
+
+    // Subscribe to sale-added and other events to refresh expenses if needed
+    const unsubscribe = on("sale-added", async () => {
+      const updatedExpenses = await getExpenses();
+      setExpenses(updatedExpenses || []);
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.description.trim() || !formData.amount) {
       toast.error("Please fill in all fields");
       return;
     }
 
-    const newExpense = addExpense({
+    const newExpense = await addExpense({
       description: formData.description,
       amount: parseFloat(formData.amount),
       category: formData.category,
       date: formData.date,
     });
 
-    setExpenses([newExpense, ...expenses]);
+    if (newExpense) {
+      const updatedExpenses = await getExpenses();
+      setExpenses(updatedExpenses || []);
+    }
+
     setFormData({
       description: "",
       amount: "",
@@ -65,11 +80,18 @@ export default function Expenses() {
     });
     setShowForm(false);
     toast.success("Expense added successfully");
+    // Emit event so other pages (Dashboard, etc.) refresh their data
+    emit("expense-added", newExpense);
   };
 
-  const handleDelete = (id) => {
-    deleteExpense(id);
-    setExpenses(expenses.filter((e) => e.id !== id));
+  const handleDelete = async (id) => {
+    if (!id) {
+      toast.error("Invalid expense ID");
+      return;
+    }
+    await deleteExpense(id);
+    const updatedExpenses = await getExpenses();
+    setExpenses(updatedExpenses || []);
     toast.success("Expense deleted");
   };
 
@@ -118,7 +140,10 @@ export default function Expenses() {
   };
 
   const formatCurrency = (value) => {
-    return `₦${value.toLocaleString()}`;
+    if (value === undefined || value === null || value === "") return "₦0";
+    const num = Number(value);
+    if (!Number.isFinite(num)) return "₦0";
+    return `₦${Math.round(num).toLocaleString()}`;
   };
 
   const formatDate = (dateVal) => {
@@ -399,8 +424,11 @@ export default function Expenses() {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <button
-                            onClick={() => handleDelete(expense.id)}
-                            className="text-xs md:text-sm px-2 py-1 rounded text-destructive hover:bg-destructive/10 transition-colors"
+                            onClick={() =>
+                              expense.id && handleDelete(expense.id)
+                            }
+                            disabled={!expense.id}
+                            className="text-xs md:text-sm px-2 py-1 rounded text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Delete
                           </button>

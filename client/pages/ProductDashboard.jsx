@@ -3,6 +3,7 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { getInventory, getSales, getClients, getExpenses } from "@/lib/data";
 import { useNavigate } from "react-router-dom";
+import { on } from "@/lib/eventBus";
 
 function parseCurrencyValue(val) {
   if (typeof val === "number") return val;
@@ -41,8 +42,44 @@ export default function ProductDashboard() {
         console.warn(`Failed to load dashboard data: ${e?.message || e}`);
       }
     })();
+
+    // Subscribe to sale-added and expense-added events to refresh data
+    const unsubscribeSale = on("sale-added", async () => {
+      try {
+        const inv = await getInventory();
+        const s = await getSales();
+        const c = await getClients();
+        const e = await getExpenses();
+        if (!mounted) return;
+        setInventory(inv || []);
+        setSales(s || []);
+        setClients(c || []);
+        setExpenses(e || []);
+      } catch (e) {
+        console.warn(`Failed to refresh dashboard data: ${e?.message || e}`);
+      }
+    });
+
+    const unsubscribeExpense = on("expense-added", async () => {
+      try {
+        const inv = await getInventory();
+        const s = await getSales();
+        const c = await getClients();
+        const e = await getExpenses();
+        if (!mounted) return;
+        setInventory(inv || []);
+        setSales(s || []);
+        setClients(c || []);
+        setExpenses(e || []);
+      } catch (e) {
+        console.warn(`Failed to refresh dashboard data: ${e?.message || e}`);
+      }
+    });
+
     return () => {
       mounted = false;
+      unsubscribeSale();
+      unsubscribeExpense();
     };
   }, []);
 
@@ -56,7 +93,11 @@ export default function ProductDashboard() {
       const d = new Date(s.createdAt);
       return d >= monthAgo;
     })
-    .reduce((sum, s) => sum + (parseCurrencyValue(s.amount) || 0), 0);
+    .reduce((sum, s) => {
+      // Try multiple fields for amount: amount, total, subtotal
+      const amt = s.amount || s.total || s.subtotal || 0;
+      return sum + (parseCurrencyValue(amt) || 0);
+    }, 0);
 
   const currentMonth = new Date().toISOString().slice(0, 7);
 
@@ -67,10 +108,9 @@ export default function ProductDashboard() {
   const monthlyProfit = monthlySales - monthlyExpenses;
 
   const lowCount = (inventory || []).filter((i) => Number(i.qty) <= 5).length;
-  const okCount = (inventory || []).filter(
-    (i) => Number(i.qty) > 5 && Number(i.qty) < 50,
+  const inStockCount = (inventory || []).filter(
+    (i) => Number(i.qty) > 5,
   ).length;
-  const fullCount = (inventory || []).filter((i) => Number(i.qty) >= 50).length;
 
   const totalCustomers = clients.length;
 
@@ -100,6 +140,24 @@ export default function ProductDashboard() {
       return db - da;
     })
     .slice(0, 5);
+
+  // Combine sales and expenses for recent activity
+  const allActivities = [
+    ...sales.map((s) => ({
+      ...s,
+      type: "sale",
+      timestamp: s.createdAt ? new Date(s.createdAt) : new Date(0),
+    })),
+    ...expenses.map((e) => ({
+      ...e,
+      type: "expense",
+      timestamp: e.date
+        ? new Date(typeof e.date === "string" ? e.date : e.date)
+        : new Date(0),
+    })),
+  ]
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 10);
 
   return (
     <Layout>
@@ -150,8 +208,9 @@ export default function ProductDashboard() {
             <div className="text-xs md:text-sm text-muted-foreground">
               Stock levels
             </div>
-            <div className="text-sm md:text-base font-semibold mt-2">
-              Low: {lowCount} · Okay: {okCount} · Full: {fullCount}
+            <div className="text-sm md:text-base font-semibold mt-2 flex gap-4">
+              <span className="text-red-600">Low: {lowCount}</span>
+              <span className="text-green-600">InStock: {inStockCount}</span>
             </div>
             <div className="mt-3 text-xs text-muted-foreground">
               Total items: {inventory.length}
@@ -177,17 +236,59 @@ export default function ProductDashboard() {
               Recent activity
             </h3>
             <ul className="mt-4 space-y-3 text-xs md:text-sm text-muted-foreground">
-              {recentSales.length > 0 ? (
-                recentSales.map((s) => (
-                  <li key={s.id || s.transactionId || Math.random()}>
-                    Sale {s.id || s.transactionId || ""} —{" "}
-                    {formatCurrency(parseCurrencyValue(s.amount))}
-                    {s.customer ? ` — ${s.customer}` : ""}
-                  </li>
-                ))
+              {allActivities.length > 0 ? (
+                allActivities.map((activity, idx) => {
+                  if (activity.type === "sale") {
+                    const saleAmount =
+                      activity.amount ||
+                      activity.total ||
+                      activity.subtotal ||
+                      0;
+                    const firstItem =
+                      Array.isArray(activity.items) && activity.items.length > 0
+                        ? activity.items[0]
+                        : null;
+                    const itemName =
+                      firstItem?.name ||
+                      activity.itemName ||
+                      activity.name ||
+                      "Unknown item";
+                    return (
+                      <li
+                        key={`${activity.type}-${activity.id || idx}`}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex-1">
+                          <span className="inline-block px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded mr-2">
+                            Sale
+                          </span>
+                          {itemName} —{" "}
+                          {formatCurrency(parseCurrencyValue(saleAmount))}
+                        </div>
+                      </li>
+                    );
+                  } else {
+                    // Expense
+                    const expenseAmount = activity.amount || 0;
+                    return (
+                      <li
+                        key={`${activity.type}-${activity.id || idx}`}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex-1">
+                          <span className="inline-block px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded mr-2">
+                            Expense
+                          </span>
+                          {activity.description || "Expense"} —{" "}
+                          {formatCurrency(parseCurrencyValue(expenseAmount))}
+                        </div>
+                      </li>
+                    );
+                  }
+                })
               ) : (
                 <>
-                  <li>No recent sales</li>
+                  <li>No recent activity</li>
                 </>
               )}
             </ul>

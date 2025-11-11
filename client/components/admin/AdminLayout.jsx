@@ -83,9 +83,19 @@ const AdminLayout = ({ children }) => {
 
   const isActive = (href) => location.pathname === href;
 
-  const handleLogout = () => {
-    signOut();
-    window.location.href = "/signin";
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (e) {
+      console.error("Logout failed:", e);
+    } finally {
+      // Use client-side navigation when possible to keep SPA behavior
+      try {
+        window.location.href = "/signin";
+      } catch (e) {
+        // fallback: do nothing
+      }
+    }
   };
 
   return (

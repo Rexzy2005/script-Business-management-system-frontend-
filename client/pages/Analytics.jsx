@@ -18,6 +18,7 @@ import {
 } from "recharts";
 import { getStatistics, getTopSelling } from "@/lib/apiInventory";
 import { getUser } from "@/lib/auth";
+import { on } from "@/lib/eventBus";
 
 const COLORS = ["#2D7C35", "#F97316", "#06B6D4"];
 
@@ -53,6 +54,22 @@ export default function Analytics() {
         setLoading(false);
       }
     })();
+
+    // Subscribe to sale-added event to refresh analytics when sales are added
+    const unsubscribe = on("sale-added", async () => {
+      try {
+        const s = await getStatistics();
+        setStats(s || {});
+        const top = await getTopSelling();
+        setTopSelling(Array.isArray(top) ? top : []);
+      } catch (e) {
+        console.warn(`Failed to refresh analytics: ${e?.message || e}`);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [navigate]);
 
   const monthlyData = Array.isArray(stats?.monthly) ? stats.monthly : [];
