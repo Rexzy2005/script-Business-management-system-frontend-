@@ -52,42 +52,13 @@ export default function Index() {
         </div>
 
         <div className="relative mt-8 md:mt-0">
-          <div className="rounded-xl bg-gradient-to-br from-primary to-secondary p-1 shadow-lg">
-            <div className="bg-card p-4 md:p-6 rounded-lg">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <p className="text-xs font-semibold text-muted-foreground">
-                  LIVE DASHBOARD
-                </p>
-              </div>
-              <h3 className="text-lg md:text-xl font-semibold mb-4">
-                Your business metrics at a glance
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-background border border-border rounded p-3">
-                  <p className="text-xs text-muted-foreground">
-                    Monthly Revenue
-                  </p>
-                  <p className="text-lg font-bold text-primary mt-1">
-                    ₦245,000
-                  </p>
-                </div>
-                <div className="bg-background border border-border rounded p-3">
-                  <p className="text-xs text-muted-foreground">Customers</p>
-                  <p className="text-lg font-bold text-primary mt-1">38</p>
-                </div>
-                <div className="bg-background border border-border rounded p-3">
-                  <p className="text-xs text-muted-foreground">
-                    Inventory Value
-                  </p>
-                  <p className="text-lg font-bold text-primary mt-1">₦1.2M</p>
-                </div>
-                <div className="bg-background border border-border rounded p-3">
-                  <p className="text-xs text-muted-foreground">Invoices Sent</p>
-                  <p className="text-lg font-bold text-primary mt-1">156</p>
-                </div>
-              </div>
-            </div>
+          <div className="rounded-xl overflow-hidden shadow-lg h-96 md:h-full">
+            <img
+              src="/img1.jpg"
+              alt="African business woman at market"
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
           </div>
         </div>
       </section>

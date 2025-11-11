@@ -38,25 +38,15 @@ export async function flutterwaveCheckout({
           phone_number: customer.phone || undefined,
           name: customer.name || undefined,
         },
-        callback: async function (data) {
-          // data contains transaction_id and status
+        callback: function (data) {
+          // data contains transaction_id, tx_ref and status from Flutterwave
           try {
-            // Verify on server via Express endpoint
-            const body = { id: data.transaction_id, tx_ref: data.tx_ref };
-            const base = getApiBaseUrl();
-            const res = await fetch(`${base}${API_ENDPOINTS.PAYMENT_VERIFY}`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(body),
-            });
-            const verified = await res.json().catch(() => null);
-            if (verified && verified.status === "success") {
-              onSuccess && onSuccess(verified);
-              resolve(verified);
-            } else {
-              onClose && onClose(verified);
-              reject(new Error("Payment verification failed"));
-            }
+            // Return raw callback data to the caller. The caller (frontend)
+            // will then POST to the server's verify endpoint including any
+            // signup payload so the server can atomically verify and create
+            // the user.
+            onSuccess && onSuccess(data);
+            resolve(data);
           } catch (e) {
             reject(e);
           }

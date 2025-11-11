@@ -99,11 +99,9 @@ const AdminLayout = ({ children }) => {
       >
         <div className="flex flex-col h-full">
           {/* Logo Area */}
-          <div className="p-6 border-b border-border">
-            <h1 className="text-xl font-bold text-primary flex items-center gap-2">
-              <Shield size={24} />
-              Super Admin
-            </h1>
+          <div className="p-6 border-b border-border flex items-center">
+            <img src="/logo g.svg" alt="Script logo" className="h-10 w-auto mr-3" />
+            <h1 className="text-xl font-bold text-primary">Super Admin</h1>
           </div>
 
           {/* Navigation */}
