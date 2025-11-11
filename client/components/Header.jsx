@@ -16,14 +16,15 @@ export default function Header({ onToggle }) {
     return () => window.removeEventListener("script-auth", onAuth);
   }, []);
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     try {
-      signOut();
+      await signOut();
       toast.success("Signed out");
     } catch (e) {
       toast.error("Sign out failed");
+    } finally {
+      navigate("/", { replace: true });
     }
-    navigate("/signin");
   };
 
   const isHomePage = location.pathname === "/";

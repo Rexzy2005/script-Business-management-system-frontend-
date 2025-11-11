@@ -11,7 +11,6 @@ import {
   Clock,
   Globe,
   DollarSign,
-  BarChart3,
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
@@ -166,15 +165,6 @@ export default function Profile() {
                 </div>
               )}
             </div>
-
-            <div>
-              <div className="text-xs md:text-sm text-muted-foreground mb-2">
-                User Role
-              </div>
-              <div className="text-base md:text-lg font-semibold capitalize">
-                {user.role}
-              </div>
-            </div>
           </div>
         </div>
 
@@ -222,18 +212,6 @@ export default function Profile() {
               </div>
               <div className="text-base md:text-lg font-semibold">
                 ₦{(user.totalExpenses || 0).toLocaleString()}
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <BarChart3 className="w-4 h-4 text-muted-foreground" />
-                <span className="text-xs md:text-sm text-muted-foreground">
-                  Wallet Balance
-                </span>
-              </div>
-              <div className="text-base md:text-lg font-semibold">
-                ₦{(user.walletBalance || 0).toLocaleString()}
               </div>
             </div>
           </div>
@@ -489,29 +467,6 @@ export default function Profile() {
                 </div>
               </div>
             )}
-
-            <div>
-              <div className="text-xs md:text-sm text-muted-foreground mb-2">
-                Account Status
-              </div>
-              <div className="flex items-center gap-2">
-                {user.isActive ? (
-                  <>
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-base md:text-lg font-semibold text-green-600">
-                      Active
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className="w-4 h-4 text-amber-600" />
-                    <span className="text-base md:text-lg font-semibold text-amber-600">
-                      Inactive
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
           </div>
         </div>
       </div>
