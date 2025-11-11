@@ -168,10 +168,15 @@ export async function getSales() {
         items = resp.data.items;
       else items = resp.data?.items || [];
 
-      salesCache = items.map((s) => ({
-        id: s._id || s.id,
-        ...s,
-      }));
+      salesCache = items.map((s) => {
+        // Normalize sales: ensure 'amount' field is set from 'total' or 'subtotal'
+        const amount = s.amount || s.total || s.subtotal || 0;
+        return {
+          id: s._id || s.id,
+          amount: amount, // Ensure amount field exists for compatibility
+          ...s,
+        };
+      });
       saveSales(salesCache);
       return salesCache;
     } catch (e) {
@@ -179,7 +184,16 @@ export async function getSales() {
     }
   }
 
-  return read(SALES_KEY, []);
+  const cached = read(SALES_KEY, []);
+  // Also normalize cached sales
+  return (Array.isArray(cached) ? cached : []).map((s) => {
+    const amount = s.amount || s.total || s.subtotal || 0;
+    return {
+      id: s._id || s.id,
+      amount: amount,
+      ...s,
+    };
+  });
 }
 
 export async function addSale(sale) {
@@ -222,10 +236,21 @@ export async function addSale(sale) {
 
       const resp = await apiSales.createSale(payload);
       const created = resp?.sale || resp?.data?.sale || resp?.data || resp;
+      // Normalize the created sale to include 'amount' field
+      const normalized = {
+        id: created?.id || created?._id || `S-${Date.now()}`,
+        amount:
+          created?.amount ||
+          created?.total ||
+          created?.subtotal ||
+          sale.amount ||
+          0,
+        ...created,
+      };
       // Refresh cache
       salesCache = null;
       await getSales();
-      return created || { id: `S-${Date.now()}`, ...sale };
+      return normalized;
     } catch (err) {
       console.warn(
         "Failed to create sale via API, falling back to local:",
@@ -239,6 +264,7 @@ export async function addSale(sale) {
   const record = {
     ...sale,
     id: `S-${Date.now()}`,
+    amount: Number(sale.amount) || 0,
     createdAt: new Date().toISOString(),
   };
   entries.unshift(record);
@@ -543,7 +569,12 @@ export async function getExpenses() {
       else if (resp.items) items = resp.items;
       else if (Array.isArray(resp.data)) items = resp.data;
       else items = resp.data?.items || [];
-      return items;
+
+      // Normalize IDs: ensure each expense has an 'id' property
+      return items.map((e) => ({
+        id: e.id || e._id || `e${Date.now()}`,
+        ...e,
+      }));
     } catch (e) {
       console.warn(
         "Failed to fetch expenses from API, falling back to local:",
@@ -551,7 +582,12 @@ export async function getExpenses() {
       );
     }
   }
-  return read(EXPENSES_KEY, []);
+  const cached = read(EXPENSES_KEY, []);
+  // Also normalize cached expenses
+  return (Array.isArray(cached) ? cached : []).map((e) => ({
+    id: e.id || e._id || `e${Date.now()}`,
+    ...e,
+  }));
 }
 
 export function saveExpenses(expenses) {
@@ -565,14 +601,18 @@ export async function addExpense(expense) {
       const resp = await apiExpenses.createExpense(expense);
       const created =
         resp?.expense || resp?.data?.expense || resp?.data || resp;
-      return created;
+      // Normalize the response to include 'id' field
+      return {
+        id: created?.id || created?._id || `e${Date.now()}`,
+        ...created,
+      };
     } catch (e) {
       console.warn("Failed to create expense via API, creating locally:", e);
       // fallback to local
     }
   }
 
-  const expenses = getExpenses();
+  const expenses = await getExpenses();
   const newExpense = {
     ...expense,
     id: `e${Date.now()}`,
@@ -583,10 +623,17 @@ export async function addExpense(expense) {
 }
 
 export async function deleteExpense(id) {
+  if (!id) {
+    console.warn("Cannot delete expense: ID is undefined");
+    return false;
+  }
+
   const user = getUser();
   if (user) {
     try {
       await apiExpenses.deleteExpenseApi(id);
+      // Refresh cache after successful deletion
+      const expenses = await getExpenses();
       return true;
     } catch (e) {
       console.warn("Failed to delete expense via API, deleting locally:", e);
@@ -594,7 +641,11 @@ export async function deleteExpense(id) {
     }
   }
 
-  const expenses = getExpenses();
+  const expenses = await getExpenses();
+  if (!Array.isArray(expenses)) {
+    console.warn("Expenses is not an array:", expenses);
+    return false;
+  }
   const filtered = expenses.filter((e) => e.id !== id);
   saveExpenses(filtered);
   return true;
