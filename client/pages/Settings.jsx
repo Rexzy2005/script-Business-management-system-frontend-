@@ -239,7 +239,7 @@ export default function Settings() {
                 <div className="text-sm font-medium mb-1">Current Plan</div>
                 <div className="text-2xl font-bold text-primary">Standard</div>
                 <div className="text-xs text-muted-foreground mt-2">
-                  ₦500/month or ₦5,000/year — Renews on Dec 15, 2024
+                  ₦200/month or ₦2,000/year — Renews on Dec 15, 2024
                 </div>
               </div>
 

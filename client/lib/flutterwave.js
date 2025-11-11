@@ -41,12 +41,19 @@ export async function flutterwaveCheckout({
         callback: function (data) {
           // data contains transaction_id, tx_ref and status from Flutterwave
           try {
-            // Return raw callback data to the caller. The caller (frontend)
-            // will then POST to the server's verify endpoint including any
-            // signup payload so the server can atomically verify and create
-            // the user.
-            onSuccess && onSuccess(data);
-            resolve(data);
+            // Flutterwave callback structure:
+            // data = {
+            //   tx_ref: "transaction reference",
+            //   transaction_id: "flw_txn_id",
+            //   status: "successful" | "failed"
+            // }
+            const callbackData = {
+              transaction_id: data.transaction_id || data.id,
+              tx_ref: data.tx_ref || tx_ref,
+              status: data.status || "successful",
+            };
+            onSuccess && onSuccess(callbackData);
+            resolve(callbackData);
           } catch (e) {
             reject(e);
           }

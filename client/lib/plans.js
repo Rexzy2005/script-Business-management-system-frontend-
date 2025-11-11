@@ -3,8 +3,8 @@ export const PLANS = {
     id: "standard",
     name: "Standard",
     description: "Full features, advanced inventory, analytics and exports",
-    monthlyNaira: 500,
-    yearlyNaira: 5000,
+    monthlyNaira: 200,
+    yearlyNaira: 2000,
   },
 };
 

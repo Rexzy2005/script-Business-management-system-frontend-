@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { getInventory, getSales, getClients, getExpenses } from "@/lib/data";
 import { useNavigate } from "react-router-dom";
 import { on } from "@/lib/eventBus";
+import { getUser } from "@/lib/auth";
 
 function parseCurrencyValue(val) {
   if (typeof val === "number") return val;
@@ -29,32 +30,55 @@ export default function ProductDashboard() {
     let mounted = true;
     (async () => {
       try {
+        // Only fetch data if user is authenticated
+        const user = getUser();
+        if (!user) {
+          if (!mounted) return;
+          setInventory([]);
+          setSales([]);
+          setClients([]);
+          setExpenses([]);
+          return;
+        }
+
         const inv = await getInventory();
         const s = await getSales();
         const c = await getClients();
         const e = await getExpenses();
         if (!mounted) return;
-        setInventory(inv || []);
-        setSales(s || []);
-        setClients(c || []);
-        setExpenses(e || []);
+        
+        // Only set data if we got valid arrays (not null/undefined)
+        setInventory(Array.isArray(inv) ? inv : []);
+        setSales(Array.isArray(s) ? s : []);
+        setClients(Array.isArray(c) ? c : []);
+        setExpenses(Array.isArray(e) ? e : []);
       } catch (e) {
         console.warn(`Failed to load dashboard data: ${e?.message || e}`);
+        if (mounted) {
+          // Set empty arrays on error to prevent undefined states
+          setInventory([]);
+          setSales([]);
+          setClients([]);
+          setExpenses([]);
+        }
       }
     })();
 
     // Subscribe to sale-added and expense-added events to refresh data
     const unsubscribeSale = on("sale-added", async () => {
       try {
+        const user = getUser();
+        if (!user) return;
+        
         const inv = await getInventory();
         const s = await getSales();
         const c = await getClients();
         const e = await getExpenses();
         if (!mounted) return;
-        setInventory(inv || []);
-        setSales(s || []);
-        setClients(c || []);
-        setExpenses(e || []);
+        setInventory(Array.isArray(inv) ? inv : []);
+        setSales(Array.isArray(s) ? s : []);
+        setClients(Array.isArray(c) ? c : []);
+        setExpenses(Array.isArray(e) ? e : []);
       } catch (e) {
         console.warn(`Failed to refresh dashboard data: ${e?.message || e}`);
       }
@@ -62,15 +86,18 @@ export default function ProductDashboard() {
 
     const unsubscribeExpense = on("expense-added", async () => {
       try {
+        const user = getUser();
+        if (!user) return;
+        
         const inv = await getInventory();
         const s = await getSales();
         const c = await getClients();
         const e = await getExpenses();
         if (!mounted) return;
-        setInventory(inv || []);
-        setSales(s || []);
-        setClients(c || []);
-        setExpenses(e || []);
+        setInventory(Array.isArray(inv) ? inv : []);
+        setSales(Array.isArray(s) ? s : []);
+        setClients(Array.isArray(c) ? c : []);
+        setExpenses(Array.isArray(e) ? e : []);
       } catch (e) {
         console.warn(`Failed to refresh dashboard data: ${e?.message || e}`);
       }

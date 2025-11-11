@@ -14,10 +14,10 @@ export function getFlutterwavePublicKey() {
   }
 }
 
-// Subscription plan amounts (in cents, so ₦500 = 50000)
+// Subscription plan amounts (in cents, so ₦200 = 20000)
 export const PLAN_AMOUNTS = {
   standard: {
-    amount: 50000, // ₦500
+    amount: 20000, // ₦200
     currency: "NGN",
     billingCycle: "monthly",
   },
@@ -27,7 +27,7 @@ export const PLAN_AMOUNTS = {
     billingCycle: "monthly",
   },
   annual: {
-    amount: 500000, // ₦5000/year
+    amount: 200000, // ₦2000/year
     currency: "NGN",
     billingCycle: "yearly",
   },

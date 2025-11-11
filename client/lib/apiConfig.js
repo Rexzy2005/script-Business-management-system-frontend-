@@ -40,6 +40,8 @@ export const API_ENDPOINTS = {
 
   // Authentication
   AUTH_REGISTER: "/api/auth/register",
+  AUTH_REGISTER_WITH_PAYMENT: "/api/auth/register-with-payment",
+  AUTH_VERIFY_SIGNUP_PAYMENT: "/api/auth/verify-signup-payment",
   AUTH_LOGIN: "/api/auth/login",
   AUTH_LOGOUT: "/api/auth/logout",
   AUTH_ME: "/api/auth/me",
