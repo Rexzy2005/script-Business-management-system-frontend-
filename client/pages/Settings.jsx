@@ -230,7 +230,6 @@ export default function Settings() {
             </div>
           </div>
 
-<<<<<<< HEAD
           {/* Subscription Plan */}
           <div className="bg-card border border-border rounded-lg p-6">
             <h3 className="font-semibold text-lg mb-4">Subscription Plan</h3>
@@ -238,7 +237,7 @@ export default function Settings() {
             <div className="space-y-4">
               <div>
                 <div className="text-sm font-medium mb-1">Current Plan</div>
-                <div className="text-2xl font-bold text-primary">Standard</div>
+                <div className="text-2xl font-bold text-primary">Premium</div>
                 <div className="text-xs text-muted-foreground mt-2">
                   ₦200/month or ₦2,000/year — Renews on Dec 15, 2024
                 </div>
@@ -277,8 +276,6 @@ export default function Settings() {
             </div>
           </div>
 
-=======
->>>>>>> 0e00562c6ed2e7c6dcc805fac96acafba870e2eb
           {/* Account Settings */}
           <div className="bg-card border border-border rounded-lg p-6">
             <h3 className="font-semibold text-lg mb-4">Account</h3>

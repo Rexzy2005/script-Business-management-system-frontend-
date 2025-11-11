@@ -1,12 +1,15 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { Check } from "lucide-react";
 import { isAuthenticated, getUser } from "@/lib/auth";
+import { PLANS, PLAN_TYPES, getYearlySavings } from "@/lib/plans";
 
 export default function Pricing() {
   const navigate = useNavigate();
+  const [selectedPlan, setSelectedPlan] = useState(PLAN_TYPES.MONTHLY);
+  const savings = getYearlySavings();
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -22,10 +25,11 @@ export default function Pricing() {
       }
     }
   }, [navigate]);
+
   const plan = {
-    name: "Standard",
-    monthlyPrice: "₦200",
-    yearlyPrice: "₦2,000",
+    name: "Premium",
+    monthlyPrice: PLANS.PREMIUM.monthlyNaira,
+    yearlyPrice: PLANS.PREMIUM.yearlyNaira,
     features: [
       "Unlimited inventory tracking",
       "Advanced analytics & reporting",
@@ -36,6 +40,12 @@ export default function Pricing() {
       "Local payment integrations",
       "Data exports",
     ],
+  };
+
+  const handleGetStarted = () => {
+    navigate("/signup", { 
+      state: { planType: selectedPlan } 
+    });
   };
 
   return (
@@ -52,6 +62,35 @@ export default function Pricing() {
         </div>
 
         <div className="max-w-2xl mx-auto">
+          {/* Plan Type Toggle */}
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex rounded-lg border border-border bg-background p-1">
+              <button
+                onClick={() => setSelectedPlan(PLAN_TYPES.MONTHLY)}
+                className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
+                  selectedPlan === PLAN_TYPES.MONTHLY
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setSelectedPlan(PLAN_TYPES.YEARLY)}
+                className={`px-6 py-2 rounded-md text-sm font-medium transition-colors relative ${
+                  selectedPlan === PLAN_TYPES.YEARLY
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Yearly
+                <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                  Save {savings.percent}%
+                </span>
+              </button>
+            </div>
+          </div>
+
           <div className="border-2 border-primary bg-primary/5 rounded-lg p-8 md:p-10">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
               <div>
@@ -66,16 +105,23 @@ export default function Pricing() {
 
             <div className="mt-8 space-y-3">
               <div className="flex items-baseline gap-3">
-                <span className="text-4xl font-bold">{plan.monthlyPrice}</span>
-                <span className="text-muted-foreground">/month</span>
+                <span className="text-4xl font-bold">
+                  ₦{selectedPlan === PLAN_TYPES.YEARLY ? plan.yearlyPrice.toLocaleString() : plan.monthlyPrice.toLocaleString()}
+                </span>
+                <span className="text-muted-foreground">
+                  /{selectedPlan === PLAN_TYPES.YEARLY ? "year" : "month"}
+                </span>
               </div>
-              <div className="flex items-baseline gap-3">
-                <span className="text-3xl font-bold">{plan.yearlyPrice}</span>
-                <span className="text-muted-foreground">/year</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Save 17% with annual billing
-              </p>
+              {selectedPlan === PLAN_TYPES.YEARLY && (
+                <p className="text-sm text-muted-foreground">
+                  Save ₦{savings.amount.toLocaleString()} ({savings.percent}% off) compared to monthly billing
+                </p>
+              )}
+              {selectedPlan === PLAN_TYPES.MONTHLY && (
+                <p className="text-sm text-muted-foreground">
+                  Billed monthly, cancel anytime
+                </p>
+              )}
             </div>
 
             <ul className="mt-10 space-y-4">
@@ -88,11 +134,13 @@ export default function Pricing() {
             </ul>
 
             <div className="mt-10 w-full">
-              <Link to="/signup" className="w-full block">
-                <Button size="lg" className="w-full h-12 text-base">
-                  Get started with {plan.name}
-                </Button>
-              </Link>
+              <Button 
+                size="lg" 
+                className="w-full h-12 text-base"
+                onClick={handleGetStarted}
+              >
+                Get started with {plan.name}
+              </Button>
             </div>
 
             <p className="text-xs text-muted-foreground text-center mt-6">

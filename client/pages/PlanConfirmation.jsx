@@ -8,6 +8,7 @@ import { PLAN_AMOUNTS } from "@/lib/paymentConfig";
 import { registerWithPayment, verifySignupPayment } from "@/lib/apiAuth";
 import { getApiBaseUrl } from "@/lib/api";
 import { Check } from "lucide-react";
+import { PLANS, PLAN_TYPES, getPlanAmount } from "@/lib/plans";
 
 export default function PlanConfirmation() {
   const { state } = useLocation();
@@ -26,6 +27,9 @@ export default function PlanConfirmation() {
 
     setIsLoading(true);
     try {
+      // Get plan type from state or default to monthly
+      const planType = state.planType || PLAN_TYPES.MONTHLY;
+
       // Step 1: Register user and initialize payment on backend
       // Backend creates pending user account and returns payment details
       const signupPayload = {
@@ -33,6 +37,7 @@ export default function PlanConfirmation() {
         email: state.email,
         phone: state.phone || "",
         password: state.password,
+        planType: planType,
       };
 
       const registerData = await registerWithPayment(signupPayload);
@@ -64,14 +69,37 @@ export default function PlanConfirmation() {
             );
             
             if (verifyData.success) {
+              // Import auth functions to properly set user state
+              const { setCurrentUser } = await import("@/lib/auth");
+              const { getAuthToken } = await import("@/lib/api");
+              
               // Store user data if provided
               if (verifyData.user) {
-                localStorage.setItem("script_user", JSON.stringify(verifyData.user));
+                setCurrentUser(verifyData.user);
+              }
+              
+              // Verify token is stored before redirecting
+              let tokenStored = false;
+              for (let i = 0; i < 10; i++) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                const token = getAuthToken();
+                if (token) {
+                  tokenStored = true;
+                  break;
+                }
+              }
+              
+              if (!tokenStored) {
+                console.warn("Token not stored after payment verification, but proceeding with redirect");
               }
               
               toast.success("Payment verified! Your account has been activated.");
-              // Redirect immediately to dashboard
-              navigate("/dashboard", { replace: true });
+              
+              // Small delay to ensure toast is visible, then redirect
+              setTimeout(() => {
+                // Use window.location for full page reload to ensure fresh auth state
+                window.location.href = "/dashboard";
+              }, 1000);
             } else {
               toast.error(verifyData.message || "Payment verification failed");
             }
@@ -106,9 +134,15 @@ export default function PlanConfirmation() {
               </p>
             </div>
             <div className="text-right">
-              <div className="text-lg font-bold">Standard</div>
-              <div className="text-2xl font-extrabold">₦200</div>
-              <div className="text-sm text-muted-foreground">/month</div>
+              <div className="text-lg font-bold">
+                {state?.planType === PLAN_TYPES.YEARLY ? "Yearly" : "Monthly"} Premium
+              </div>
+              <div className="text-2xl font-extrabold">
+                ₦{getPlanAmount(state?.planType || PLAN_TYPES.MONTHLY).toLocaleString()}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                /{state?.planType === PLAN_TYPES.YEARLY ? "year" : "month"}
+              </div>
             </div>
           </div>
 
@@ -163,7 +197,7 @@ export default function PlanConfirmation() {
                 >
                   {isLoading
                     ? "Processing..."
-                    : "Pay ₦200 & Activate Account"}
+                    : `Pay ₦${getPlanAmount(state?.planType || PLAN_TYPES.MONTHLY).toLocaleString()} & Activate Account`}
                 </Button>
               </div>
 

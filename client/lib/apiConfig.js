@@ -45,6 +45,7 @@ export const API_ENDPOINTS = {
   AUTH_LOGIN: "/api/auth/login",
   AUTH_LOGOUT: "/api/auth/logout",
   AUTH_ME: "/api/auth/me",
+  AUTH_PROFILE: "/api/auth/profile",
   AUTH_UPDATE_PASSWORD: "/api/auth/update-password",
 
   // Business
