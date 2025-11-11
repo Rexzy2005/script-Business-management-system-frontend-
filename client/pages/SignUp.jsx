@@ -3,8 +3,7 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { register, isAuthenticated, getUser } from "@/lib/auth";
-import { Check } from "lucide-react";
+import { isAuthenticated, getUser } from "@/lib/auth";
 
 export default function SignUp() {
   const [business, setBusiness] = useState("");
@@ -39,28 +38,22 @@ export default function SignUp() {
   };
 
   const handleSignUp = async () => {
+    // Instead of immediately registering, navigate to plan confirmation
+    // where the user can review the plan and click Pay.
+    // Pass form data via location state.
     setIsLoading(true);
     try {
-      const response = await register({
-        name: business,
-        email,
-        phone,
-        password,
-        businessName: business,
-        businessType: "product_seller",
-        plan: "standard",
+      navigate("/signup/plan", {
+        state: {
+          name: business,
+          email,
+          phone,
+          password,
+          businessName: business,
+          businessType: businessType || "product_seller",
+          plan: "standard",
+        },
       });
-
-      if (!response.success) {
-        throw new Error(response.message || "Registration failed");
-      }
-
-      toast.success("Account created successfully!");
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 600);
-    } catch (error) {
-      toast.error(error.message || "Registration failed");
     } finally {
       setIsLoading(false);
     }
@@ -177,80 +170,7 @@ export default function SignUp() {
             </div>
           </div>
 
-          {/* Right side - Plan Details */}
-          <div className="md:sticky md:top-20">
-            <div className="border border-primary bg-primary/5 rounded-lg p-6 md:p-8">
-              <div className="text-sm font-semibold text-primary mb-4">
-                Standard Plan
-              </div>
-              <div className="text-3xl md:text-4xl font-bold mb-2">
-                ₦500
-                <span className="text-lg text-muted-foreground">/month</span>
-              </div>
-              <div className="text-sm text-muted-foreground mb-6">
-                or ₦5,000/year (billed annually)
-              </div>
-
-              <ul className="space-y-4">
-                <li className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">
-                    <strong>Unlimited invoicing</strong> — Create and send
-                    professional invoices
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">
-                    <strong>Complete inventory management</strong> — Track
-                    unlimited items and stock levels
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">
-                    <strong>Advanced analytics</strong> — Detailed insights into
-                    sales, expenses, and cash flow
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">
-                    <strong>Client & customer management</strong> — Centralized
-                    database for all your contacts
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">
-                    <strong>Team collaboration</strong> — Add team members and
-                    assign tasks
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">
-                    <strong>Payment tracking</strong> — Monitor all transactions
-                    and payment status
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">
-                    <strong>Reports & exports</strong> — Generate detailed
-                    reports and export data
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">
-                    <strong>Priority support</strong> — Get help when you need
-                    it
-                  </span>
-                </li>
-              </ul>
-            </div>
-          </div>
+          {/* Right side intentionally removed — plan details will be shown after clicking Create account */}
         </div>
       </div>
     </Layout>

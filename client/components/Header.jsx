@@ -2,6 +2,7 @@ import React from "react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { isAuthenticated, getUser, signOut } from "@/lib/auth";
+import { toast } from "sonner";
 
 export default function Header({ onToggle }) {
   const navigate = useNavigate();
@@ -16,7 +17,12 @@ export default function Header({ onToggle }) {
   }, []);
 
   const handleSignOut = () => {
-    signOut();
+    try {
+      signOut();
+      toast.success("Signed out");
+    } catch (e) {
+      toast.error("Sign out failed");
+    }
     navigate("/signin");
   };
 

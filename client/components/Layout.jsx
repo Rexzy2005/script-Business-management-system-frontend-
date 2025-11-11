@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { isAuthenticated, getUser, signOut } from "@/lib/auth";
+import { toast } from "sonner";
 
 export default function Layout({ children, fullWidth = false }) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
@@ -23,7 +24,12 @@ export default function Layout({ children, fullWidth = false }) {
   }, [sidebarOpen]);
 
   const handleSignOut = () => {
-    signOut();
+    try {
+      signOut();
+      toast.success("Signed out");
+    } catch (e) {
+      toast.error("Sign out failed");
+    }
     setSidebarOpen(false);
     navigate("/signin");
   };

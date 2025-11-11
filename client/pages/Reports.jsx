@@ -174,16 +174,18 @@ export default function Reports() {
             <h3 className="font-semibold text-sm md:text-base mb-4">
               Revenue trend
             </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={revenueByDate}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" style={{ fontSize: "0.75rem" }} />
-                <YAxis style={{ fontSize: "0.75rem" }} />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="revenue" stroke="#22c55e" />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="w-full h-64 md:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={revenueByDate}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" style={{ fontSize: "0.75rem" }} />
+                  <YAxis style={{ fontSize: "0.75rem" }} />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="revenue" stroke="#22c55e" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
           <div className="p-4 bg-card border border-border rounded-lg">
@@ -191,17 +193,19 @@ export default function Reports() {
               Revenue by service
             </h3>
             {revenueByService.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={revenueByService}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" style={{ fontSize: "0.75rem" }} />
-                  <YAxis style={{ fontSize: "0.75rem" }} />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="#3b82f6" />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="w-full h-64 md:h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={revenueByService}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" style={{ fontSize: "0.75rem" }} />
+                    <YAxis style={{ fontSize: "0.75rem" }} />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="#3b82f6" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             ) : (
-              <div className="h-80 flex items-center justify-center text-xs text-muted-foreground">
+              <div className="h-64 md:h-80 flex items-center justify-center text-xs text-muted-foreground">
                 No data available
               </div>
             )}
@@ -212,27 +216,29 @@ export default function Reports() {
               Bookings by status
             </h3>
             {bookingsByStatus.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={bookingsByStatus}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ${value}`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {bookingsByStatus.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="w-full h-64 md:h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={bookingsByStatus}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value }) => `${name}: ${value}`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {bookingsByStatus.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             ) : (
-              <div className="h-80 flex items-center justify-center text-xs text-muted-foreground">
+              <div className="h-64 md:h-80 flex items-center justify-center text-xs text-muted-foreground">
                 No data available
               </div>
             )}
