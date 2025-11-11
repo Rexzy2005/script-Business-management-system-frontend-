@@ -11,6 +11,7 @@ export async function registerWithPayment(userData) {
       email: userData.email,
       phone: userData.phone || "",
       password: userData.password,
+      planType: userData.planType || "monthly", // Support monthly/yearly plans
     });
 
     return {
@@ -181,7 +182,12 @@ export async function logout() {
 export async function getCurrentUser() {
   try {
     const response = await apiGet(API_ENDPOINTS.AUTH_ME);
-    return response?.data || response?.user || null;
+    // Backend returns { success: true, data: { user: ... } }
+    if (response?.data?.user) {
+      return response.data.user;
+    }
+    // Fallback for different response formats
+    return response?.data || response?.user || response || null;
   } catch (error) {
     clearAuthToken();
     throw new Error(error?.message || "Failed to get current user");
@@ -197,6 +203,22 @@ export async function updateCurrentUser(updates) {
     return response?.data || response?.user || response || null;
   } catch (error) {
     throw new Error(error?.message || "Failed to update current user");
+  }
+}
+
+/**
+ * Updates user profile (business info, settings, etc.)
+ */
+export async function updateProfile(profileData) {
+  try {
+    const response = await apiPut(API_ENDPOINTS.AUTH_PROFILE, profileData);
+    return {
+      success: response?.success !== false,
+      user: response?.data?.user || response?.user || null,
+      message: response?.message || null,
+    };
+  } catch (error) {
+    throw new Error(error?.message || "Failed to update profile");
   }
 }
 

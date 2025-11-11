@@ -227,13 +227,13 @@ export default function Index() {
             </div>
 
             <div className="flex items-baseline justify-center gap-2 mb-8">
-              <span className="text-5xl font-bold">₦500</span>
+              <span className="text-5xl font-bold">₦200</span>
               <span className="text-muted-foreground">/month</span>
             </div>
 
             <p className="text-center text-sm text-muted-foreground mb-8">
-              or <strong className="text-foreground">₦5,000/year</strong> and
-              save ₦500
+              or <strong className="text-foreground">₦2,000/year</strong> and
+              save ₦400
             </p>
 
             <Link to="/signup" className="block mb-8">

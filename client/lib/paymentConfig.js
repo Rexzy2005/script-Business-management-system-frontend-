@@ -22,7 +22,7 @@ export const PLAN_AMOUNTS = {
     billingCycle: "monthly",
   },
   premium: {
-    amount: 100000, // ₦1000
+    amount: 20000, // ₦200
     currency: "NGN",
     billingCycle: "monthly",
   },
