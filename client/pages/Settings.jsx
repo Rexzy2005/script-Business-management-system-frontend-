@@ -230,6 +230,7 @@ export default function Settings() {
             </div>
           </div>
 
+<<<<<<< HEAD
           {/* Subscription Plan */}
           <div className="bg-card border border-border rounded-lg p-6">
             <h3 className="font-semibold text-lg mb-4">Subscription Plan</h3>
@@ -276,6 +277,8 @@ export default function Settings() {
             </div>
           </div>
 
+=======
+>>>>>>> 0e00562c6ed2e7c6dcc805fac96acafba870e2eb
           {/* Account Settings */}
           <div className="bg-card border border-border rounded-lg p-6">
             <h3 className="font-semibold text-lg mb-4">Account</h3>
@@ -293,7 +296,7 @@ export default function Settings() {
                 } catch (e) {
                   toast.error("Sign out failed");
                 }
-                navigate("/signin");
+                navigate("/", { replace: true });
               }}
               className="text-xs md:text-sm"
             >

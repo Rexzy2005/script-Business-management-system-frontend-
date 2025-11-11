@@ -40,7 +40,6 @@ export default function Index() {
           <div className="mt-6 md:mt-8 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <Link to="/signup" className="w-full sm:w-auto">
               <Button size="lg" className="w-full sm:w-auto">
-                Get started — ₦200/month
                 Get started 
               </Button>
             </Link>
@@ -228,13 +227,13 @@ export default function Index() {
             </div>
 
             <div className="flex items-baseline justify-center gap-2 mb-8">
-              <span className="text-5xl font-bold">₦200</span>
+              <span className="text-5xl font-bold">₦500</span>
               <span className="text-muted-foreground">/month</span>
             </div>
 
             <p className="text-center text-sm text-muted-foreground mb-8">
-              or <strong className="text-foreground">₦2,000/year</strong> and
-              save ₦400
+              or <strong className="text-foreground">₦5,000/year</strong> and
+              save ₦500
             </p>
 
             <Link to="/signup" className="block mb-8">

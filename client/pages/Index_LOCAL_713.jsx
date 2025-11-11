@@ -29,11 +29,11 @@ export default function Index() {
       <section className="grid gap-8 md:gap-16 lg:grid-cols-2 items-center mb-16 md:mb-24">
         <div>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight">
-            Script — Smart Business Management System for Nigerian SMEs
+            Script — Smart inventory & invoicing for Nigerian SMEs
           </h1>
           <p className="mt-4 md:mt-6 text-base md:text-lg text-muted-foreground max-w-xl">
-            All-in-one platform to manage sales, inventory, cash flow, and
-            customer relationships — built for businesses in
+            All-in-one platform to manage invoicing, inventory, cash flow,
+            customer relationships, and teams — built for product businesses in
             Nigeria with local payments and practical workflows.
           </p>
 
@@ -41,7 +41,6 @@ export default function Index() {
             <Link to="/signup" className="w-full sm:w-auto">
               <Button size="lg" className="w-full sm:w-auto">
                 Get started — ₦200/month
-                Get started 
               </Button>
             </Link>
             <Link to="/features" className="w-full sm:w-auto">
@@ -52,18 +51,13 @@ export default function Index() {
           </div>
         </div>
 
-        <div className="relative mt-8 md:mt-0 w-full">
-          <div className="rounded-xl overflow-visible aspect-[4/3] md:aspect-[16/10] lg:aspect-auto lg:h-[600px]">
+        <div className="relative mt-8 md:mt-0">
+          <div className="rounded-xl overflow-hidden shadow-lg h-96 md:h-full">
             <img
-              src="/Group 7.png"
-              alt="Script business management dashboard with Nigerian entrepreneurs"
-              className="w-full h-full object-contain"
-              style={{
-                filter: 'drop-shadow(0 10px 25px rgba(0, 0, 0, 0.15)) drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))'
-              }}
-              loading="eager"
-              fetchPriority="high"
-              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 40vw"
+              src="/img1.jpg"
+              alt="African business woman at market"
+              className="w-full h-full object-cover"
+              loading="lazy"
             />
           </div>
         </div>
@@ -78,11 +72,11 @@ export default function Index() {
           <div className="p-4 md:p-6 bg-card border border-border rounded-lg">
             <Zap className="w-6 h-6 text-primary mb-3" />
             <h4 className="font-semibold text-sm md:text-base">
-              Sales Management
+              Invoice Management
             </h4>
             <p className="text-xs md:text-sm text-muted-foreground mt-2">
-              Create sales, track payments,
-              and manage stock levels reminders.
+              Create professional invoices, send to customers, track payments,
+              and manage overdue reminders.
             </p>
           </div>
           <div className="p-4 md:p-6 bg-card border border-border rounded-lg">
