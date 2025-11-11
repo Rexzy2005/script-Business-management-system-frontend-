@@ -7,8 +7,7 @@ export default function Footer() {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="w-full md:w-auto">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-md bg-primary" />
-            <span className="font-semibold">Script</span>
+            <img src="/logo g.svg" alt="Script logo" className="w-9 h-auto" />
           </div>
           <p className="mt-3 text-xs md:text-sm text-muted-foreground max-w-md">
             Helping Nigerian SMEs run, grow and scale with simple, local-first
