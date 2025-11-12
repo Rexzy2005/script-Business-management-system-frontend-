@@ -2,14 +2,6 @@ import React, { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { getCurrentUser, updateProfile } from "@/lib/apiAuth";
 import { setCurrentUser } from "@/lib/auth";
 import { useNavigate } from "react-router-dom";
@@ -19,8 +11,6 @@ import {
   Briefcase,
   Calendar,
   Clock,
-  Globe,
-  DollarSign,
   CheckCircle,
   AlertCircle,
   Edit,
@@ -40,18 +30,6 @@ export default function Profile() {
   const [formData, setFormData] = useState({
     businessName: "",
     phone: "",
-    settings: {
-      currency: "NGN",
-      timezone: "Africa/Lagos",
-      dateFormat: "DD/MM/YYYY",
-      language: "en",
-      notifications: {
-        email: true,
-        sms: false,
-        lowStock: true,
-        invoiceDue: true,
-      },
-    },
   });
 
   useEffect(() => {
@@ -71,18 +49,6 @@ export default function Profile() {
         setFormData({
           businessName: user.businessName || "",
           phone: user.phone || "",
-          settings: {
-            currency: user.settings?.currency || "NGN",
-            timezone: user.settings?.timezone || "Africa/Lagos",
-            dateFormat: user.settings?.dateFormat || "DD/MM/YYYY",
-            language: user.settings?.language || "en",
-            notifications: {
-              email: user.settings?.notifications?.email ?? true,
-              sms: user.settings?.notifications?.sms ?? false,
-              lowStock: user.settings?.notifications?.lowStock ?? true,
-              invoiceDue: user.settings?.notifications?.invoiceDue ?? true,
-            },
-          },
         });
       }
 
@@ -105,46 +71,9 @@ export default function Profile() {
   };
 
   const handleInputChange = (field, value) => {
-    if (field.includes(".")) {
-      const [parent, child, subChild] = field.split(".");
-      if (subChild) {
-        setFormData((prev) => ({
-          ...prev,
-          [parent]: {
-            ...prev[parent],
-            [child]: {
-              ...prev[parent][child],
-              [subChild]: value,
-            },
-          },
-        }));
-      } else {
-        setFormData((prev) => ({
-          ...prev,
-          [parent]: {
-            ...prev[parent],
-            [child]: value,
-          },
-        }));
-      }
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [field]: value,
-      }));
-    }
-  };
-
-  const handleNotificationChange = (key, value) => {
     setFormData((prev) => ({
       ...prev,
-      settings: {
-        ...prev.settings,
-        notifications: {
-          ...prev.settings.notifications,
-          [key]: value,
-        },
-      },
+      [field]: value,
     }));
   };
 
@@ -154,7 +83,6 @@ export default function Profile() {
       const result = await updateProfile({
         businessName: formData.businessName,
         phone: formData.phone,
-        settings: formData.settings,
       });
 
       if (result.success) {
@@ -180,18 +108,6 @@ export default function Profile() {
       setFormData({
         businessName: user.businessName || "",
         phone: user.phone || "",
-        settings: {
-          currency: user.settings?.currency || "NGN",
-          timezone: user.settings?.timezone || "Africa/Lagos",
-          dateFormat: user.settings?.dateFormat || "DD/MM/YYYY",
-          language: user.settings?.language || "en",
-          notifications: {
-            email: user.settings?.notifications?.email ?? true,
-            sms: user.settings?.notifications?.sms ?? false,
-            lowStock: user.settings?.notifications?.lowStock ?? true,
-            invoiceDue: user.settings?.notifications?.invoiceDue ?? true,
-          },
-        },
       });
     }
     setIsEditing(false);
@@ -364,276 +280,187 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Settings & Preferences */}
+        {/* Subscription Plan */}
         <div className="bg-card border border-border rounded-lg p-6 mb-6">
-          <h3 className="font-semibold text-lg mb-6">Settings & Preferences</h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="w-4 h-4 text-muted-foreground" />
-                <span className="text-xs md:text-sm text-muted-foreground">
-                  Currency
-                </span>
-              </div>
-              {isEditing ? (
-                <Select
-                  value={formData.settings.currency}
-                  onValueChange={(value) =>
-                    handleInputChange("settings.currency", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NGN">NGN (₦)</SelectItem>
-                    <SelectItem value="USD">USD ($)</SelectItem>
-                    <SelectItem value="GBP">GBP (£)</SelectItem>
-                    <SelectItem value="EUR">EUR (€)</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <div className="text-base md:text-lg font-semibold">
-                  {user.settings?.currency || "NGN"}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Globe className="w-4 h-4 text-muted-foreground" />
-                <span className="text-xs md:text-sm text-muted-foreground">
-                  Timezone
-                </span>
-              </div>
-              {isEditing ? (
-                <Select
-                  value={formData.settings.timezone}
-                  onValueChange={(value) =>
-                    handleInputChange("settings.timezone", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Africa/Lagos">Africa/Lagos (WAT)</SelectItem>
-                    <SelectItem value="UTC">UTC</SelectItem>
-                    <SelectItem value="America/New_York">America/New_York (EST)</SelectItem>
-                    <SelectItem value="Europe/London">Europe/London (GMT)</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <div className="text-base md:text-lg font-semibold">
-                  {user.settings?.timezone || "Africa/Lagos"}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <div className="text-xs md:text-sm text-muted-foreground mb-2">
-                Date Format
-              </div>
-              {isEditing ? (
-                <Select
-                  value={formData.settings.dateFormat}
-                  onValueChange={(value) =>
-                    handleInputChange("settings.dateFormat", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
-                    <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
-                    <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <div className="text-base md:text-lg font-semibold">
-                  {user.settings?.dateFormat || "DD/MM/YYYY"}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <div className="text-xs md:text-sm text-muted-foreground mb-2">
-                Language
-              </div>
-              {isEditing ? (
-                <Select
-                  value={formData.settings.language}
-                  onValueChange={(value) =>
-                    handleInputChange("settings.language", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="fr">French</SelectItem>
-                    <SelectItem value="es">Spanish</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <div className="text-base md:text-lg font-semibold capitalize">
-                  {user.settings?.language || "English"}
-                </div>
-              )}
-            </div>
-
-            {/* Notifications */}
-            <div className="md:col-span-2">
-              <div className="text-xs md:text-sm text-muted-foreground mb-3">
-                Notifications
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.settings.notifications.email}
-                    onChange={(e) =>
-                      handleNotificationChange("email", e.target.checked)
-                    }
-                    disabled={!isEditing}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm">Email</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.settings.notifications.sms}
-                    onChange={(e) =>
-                      handleNotificationChange("sms", e.target.checked)
-                    }
-                    disabled={!isEditing}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm">SMS</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.settings.notifications.lowStock}
-                    onChange={(e) =>
-                      handleNotificationChange("lowStock", e.target.checked)
-                    }
-                    disabled={!isEditing}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm">Low Stock</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.settings.notifications.invoiceDue}
-                    onChange={(e) =>
-                      handleNotificationChange("invoiceDue", e.target.checked)
-                    }
-                    disabled={!isEditing}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm">Invoice Due</span>
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Subscription Info */}
-        <div className="bg-card border border-border rounded-lg p-6 mb-6">
-          <h3 className="font-semibold text-lg mb-6">Subscription</h3>
+          <h3 className="font-semibold text-lg mb-6">Subscription Plan</h3>
 
           {(() => {
-            // Determine plan type based on subscription status
+            // Determine plan type and status from database
             const isActive = subscription?.status === "active" || user.plan?.status === "active";
-            let planType = "Free";
-            
-            if (isActive) {
-              if (subscription?.planType === "yearly") {
-                planType = "Yearly";
-              } else if (subscription?.planType === "monthly") {
-                planType = "Monthly";
-              } else if (user.plan?.type === "premium") {
-                // Legacy plan - check if it's yearly or monthly based on amount
-                planType = "Monthly"; // Default to monthly for legacy plans
-              }
+            const planType = subscription?.planType || (user.plan?.type === "premium" ? "monthly" : null);
+            const planName = subscription?.planName || "Premium";
+            const amount = subscription?.amount || 0;
+            const currency = subscription?.currency || "NGN";
+            const endDate = subscription?.endDate;
+            const daysRemaining = subscription?.daysRemaining;
+            const autoRenew = subscription?.autoRenew !== false;
+
+            // Calculate days remaining if not provided
+            let calculatedDaysRemaining = 0;
+            if (endDate && isActive) {
+              const now = new Date();
+              const end = new Date(endDate);
+              const diffTime = end - now;
+              calculatedDaysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              calculatedDaysRemaining = calculatedDaysRemaining > 0 ? calculatedDaysRemaining : 0;
             }
 
             return (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <div className="text-xs md:text-sm text-muted-foreground mb-2">
-                    Plan Type
-                  </div>
-                  <div className="text-base md:text-lg font-semibold capitalize">
-                    {planType}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-xs md:text-sm text-muted-foreground mb-2">
-                    Status
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {isActive ? (
-                      <>
-                        <CheckCircle className="w-4 h-4 text-green-600" />
-                        <span className="text-base md:text-lg font-semibold text-green-600">
-                          Active
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertCircle className="w-4 h-4 text-amber-600" />
-                        <span className="text-base md:text-lg font-semibold text-amber-600">
-                          {subscription?.status || user.plan?.status || "Inactive"}
-                        </span>
-                      </>
+              <div className="space-y-6">
+                {/* Plan Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <div className="text-xs md:text-sm text-muted-foreground mb-2">
+                      Current Plan
+                    </div>
+                    <div className="text-2xl md:text-3xl font-bold text-primary capitalize">
+                      {planType ? `${planType} ${planName}` : "Free Plan"}
+                    </div>
+                    {planType && (
+                      <div className="text-xs md:text-sm text-muted-foreground mt-2">
+                        {currency === "NGN" ? "₦" : currency} {amount.toLocaleString()}
+                        {planType === "monthly" ? "/month" : "/year"}
+                      </div>
                     )}
                   </div>
+
+                  <div>
+                    <div className="text-xs md:text-sm text-muted-foreground mb-2">
+                      Status
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isActive ? (
+                        <>
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                          <span className="text-base md:text-lg font-semibold text-green-600">
+                            Active
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle className="w-5 h-5 text-amber-600" />
+                          <span className="text-base md:text-lg font-semibold text-amber-600 capitalize">
+                            {subscription?.status || user.plan?.status || "Inactive"}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                {isActive && subscription?.endDate && (
-                  <div>
-                    <div className="text-xs md:text-sm text-muted-foreground mb-2">
-                      Expires On
-                    </div>
-                    <div className="text-base md:text-lg font-semibold">
-                      {formatDate(subscription.endDate)}
+                {/* Subscription Details */}
+                {isActive && planType && (
+                  <div className="pt-4 border-t border-border">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {endDate && (
+                        <div>
+                          <div className="text-xs md:text-sm text-muted-foreground mb-2">
+                            {planType === "monthly" ? "Renews On" : "Expires On"}
+                          </div>
+                          <div className="text-base md:text-lg font-semibold">
+                            {formatDate(endDate)}
+                          </div>
+                        </div>
+                      )}
+
+                      {(daysRemaining !== undefined || calculatedDaysRemaining > 0) && (
+                        <div>
+                          <div className="text-xs md:text-sm text-muted-foreground mb-2">
+                            Days Remaining
+                          </div>
+                          <div className="text-base md:text-lg font-semibold">
+                            {daysRemaining !== undefined ? daysRemaining : calculatedDaysRemaining} days
+                          </div>
+                        </div>
+                      )}
+
+                      <div>
+                        <div className="text-xs md:text-sm text-muted-foreground mb-2">
+                          Auto Renewal
+                        </div>
+                        <div className="text-base md:text-lg font-semibold capitalize">
+                          {autoRenew ? "Enabled" : "Disabled"}
+                        </div>
+                      </div>
+
+                      {subscription?.startDate && (
+                        <div>
+                          <div className="text-xs md:text-sm text-muted-foreground mb-2">
+                            Started On
+                          </div>
+                          <div className="text-base md:text-lg font-semibold">
+                            {formatDate(subscription.startDate)}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
 
-                {isActive && subscription?.daysRemaining !== undefined && (
-                  <div>
-                    <div className="text-xs md:text-sm text-muted-foreground mb-2">
-                      Days Remaining
-                    </div>
-                    <div className="text-base md:text-lg font-semibold">
-                      {subscription.daysRemaining} days
-                    </div>
+                {/* Plan Benefits */}
+                {isActive && (
+                  <div className="pt-4 border-t border-border">
+                    <div className="text-sm font-medium mb-3">Plan Benefits:</div>
+                    <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs md:text-sm text-muted-foreground">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                        Unlimited invoices
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                        Unlimited inventory management
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                        Advanced analytics
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                        Team collaboration
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                        Priority support
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                        Data exports
+                      </li>
+                    </ul>
                   </div>
                 )}
 
-                {!isActive && (
-                  <div className="md:col-span-2">
-                    <div className="text-xs md:text-sm text-muted-foreground mb-2">
-                      Upgrade to Premium
-                    </div>
+                {/* Action Buttons */}
+                <div className="pt-4 border-t border-border flex flex-col sm:flex-row gap-3">
+                  {!isActive ? (
                     <Button
                       size="sm"
                       onClick={() => navigate("/pricing")}
-                      className="mt-2"
+                      className="w-full sm:w-auto"
                     >
-                      View Plans
+                      Upgrade to Premium
                     </Button>
-                  </div>
-                )}
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate("/pricing")}
+                        className="w-full sm:w-auto"
+                      >
+                        Manage Plan
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toast.info("Billing management coming soon...")}
+                        className="w-full sm:w-auto"
+                      >
+                        Manage Billing
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             );
           })()}

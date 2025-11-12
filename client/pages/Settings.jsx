@@ -11,14 +11,15 @@ export default function Settings() {
   const navigate = useNavigate();
   const user = getUser();
   const [formData, setFormData] = useState({
-    businessName: user?.name || "",
-    email: user?.email || "",
-    phone: user?.phone || "",
-    timezone: "Africa/Lagos",
-    currency: "NGN",
-    language: "en",
+    timezone: user?.settings?.timezone || "Africa/Lagos",
+    currency: user?.settings?.currency || "NGN",
+    language: user?.settings?.language || "en",
+    dateFormat: user?.settings?.dateFormat || "DD/MM/YYYY",
     notifications: true,
-    emailNotifications: true,
+    emailNotifications: user?.settings?.notifications?.email ?? true,
+    smsNotifications: user?.settings?.notifications?.sms ?? false,
+    lowStockNotifications: user?.settings?.notifications?.lowStock ?? true,
+    invoiceDueNotifications: user?.settings?.notifications?.invoiceDue ?? true,
   });
 
   const [initialData, setInitialData] = useState(formData);
@@ -39,14 +40,18 @@ export default function Settings() {
     e.preventDefault();
     try {
       await updateCurrentUser({
-        name: formData.businessName,
-        email: formData.email,
-        phone: formData.phone,
-        timezone: formData.timezone,
-        currency: formData.currency,
-        language: formData.language,
-        notifications: formData.notifications,
-        emailNotifications: formData.emailNotifications,
+        settings: {
+          timezone: formData.timezone,
+          currency: formData.currency,
+          language: formData.language,
+          dateFormat: formData.dateFormat,
+          notifications: {
+            email: formData.emailNotifications,
+            sms: formData.smsNotifications,
+            lowStock: formData.lowStockNotifications,
+            invoiceDue: formData.invoiceDueNotifications,
+          },
+        },
       });
       await fetchCurrentUser();
       toast.success("Settings updated successfully");
@@ -81,53 +86,28 @@ export default function Settings() {
         </div>
 
         <form onSubmit={handleSave} className="space-y-6">
-          {/* Business Information */}
+          {/* Settings & Preferences */}
           <div className="bg-card border border-border rounded-lg p-6">
-            <h3 className="font-semibold text-lg mb-4">Business Information</h3>
+            <h3 className="font-semibold text-lg mb-4">Settings & Preferences</h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <label>
                 <div className="text-xs md:text-sm font-medium mb-2">
-                  Business name
+                  Currency
                 </div>
-                <input
-                  type="text"
-                  name="businessName"
-                  value={formData.businessName}
+                <select
+                  name="currency"
+                  value={formData.currency}
                   onChange={handleChange}
                   className="w-full rounded-md border border-border px-3 py-2 bg-background text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
+                >
+                  <option value="NGN">NGN (₦)</option>
+                  <option value="USD">USD ($)</option>
+                  <option value="GBP">GBP (£)</option>
+                  <option value="EUR">EUR (€)</option>
+                </select>
               </label>
 
-              <label>
-                <div className="text-xs md:text-sm font-medium mb-2">Email</div>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full rounded-md border border-border px-3 py-2 bg-background text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </label>
-
-              <label>
-                <div className="text-xs md:text-sm font-medium mb-2">Phone</div>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="w-full rounded-md border border-border px-3 py-2 bg-background text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </label>
-            </div>
-          </div>
-
-          {/* Regional Settings */}
-          <div className="bg-card border border-border rounded-lg p-6">
-            <h3 className="font-semibold text-lg mb-4">Regional Settings</h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <label>
                 <div className="text-xs md:text-sm font-medium mb-2">
                   Timezone
@@ -139,36 +119,25 @@ export default function Settings() {
                   className="w-full rounded-md border border-border px-3 py-2 bg-background text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="Africa/Lagos">Africa/Lagos (WAT)</option>
-                  <option value="Africa/Johannesburg">
-                    Africa/Johannesburg (SAST)
-                  </option>
+                  <option value="UTC">UTC</option>
+                  <option value="America/New_York">America/New_York (EST)</option>
                   <option value="Europe/London">Europe/London (GMT)</option>
-                  <option value="Europe/Paris">Europe/Paris (CET)</option>
-                  <option value="America/New_York">
-                    America/New_York (EST)
-                  </option>
-                  <option value="America/Los_Angeles">
-                    America/Los_Angeles (PST)
-                  </option>
-                  <option value="Asia/Lagos">Asia/Dubai (GST)</option>
                 </select>
               </label>
 
               <label>
                 <div className="text-xs md:text-sm font-medium mb-2">
-                  Currency
+                  Date Format
                 </div>
                 <select
-                  name="currency"
-                  value={formData.currency}
+                  name="dateFormat"
+                  value={formData.dateFormat || "DD/MM/YYYY"}
                   onChange={handleChange}
                   className="w-full rounded-md border border-border px-3 py-2 bg-background text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 >
-                  <option value="NGN">NGN (Nigerian Naira)</option>
-                  <option value="USD">USD (US Dollar)</option>
-                  <option value="EUR">EUR (Euro)</option>
-                  <option value="GBP">GBP (British Pound)</option>
-                  <option value="ZAR">ZAR (South African Rand)</option>
+                  <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                  <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                  <option value="YYYY-MM-DD">YYYY-MM-DD</option>
                 </select>
               </label>
 
@@ -183,11 +152,60 @@ export default function Settings() {
                   className="w-full rounded-md border border-border px-3 py-2 bg-background text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="en">English</option>
-                  <option value="fr">French</option>
-                  <option value="es">Spanish</option>
-                  <option value="pt">Portuguese</option>
+                  <option value="ha">Hausa</option>
+                  <option value="ig">Igbo</option>
+                  <option value="yo">Yoruba</option>
                 </select>
               </label>
+
+              {/* Notifications */}
+              <div className="md:col-span-2">
+                <div className="text-xs md:text-sm font-medium mb-3">
+                  Notifications
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="emailNotifications"
+                      checked={formData.emailNotifications}
+                      onChange={handleChange}
+                      className="w-4 h-4 rounded border-border"
+                    />
+                    <span className="text-sm">Email</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="smsNotifications"
+                      checked={formData.smsNotifications || false}
+                      onChange={handleChange}
+                      className="w-4 h-4 rounded border-border"
+                    />
+                    <span className="text-sm">SMS</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="lowStockNotifications"
+                      checked={formData.lowStockNotifications || false}
+                      onChange={handleChange}
+                      className="w-4 h-4 rounded border-border"
+                    />
+                    <span className="text-sm">Low Stock</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="invoiceDueNotifications"
+                      checked={formData.invoiceDueNotifications || false}
+                      onChange={handleChange}
+                      className="w-4 h-4 rounded border-border"
+                    />
+                    <span className="text-sm">Invoice Due</span>
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -227,52 +245,6 @@ export default function Settings() {
                   </div>
                 </div>
               </label>
-            </div>
-          </div>
-
-          {/* Subscription Plan */}
-          <div className="bg-card border border-border rounded-lg p-6">
-            <h3 className="font-semibold text-lg mb-4">Subscription Plan</h3>
-
-            <div className="space-y-4">
-              <div>
-                <div className="text-sm font-medium mb-1">Current Plan</div>
-                <div className="text-2xl font-bold text-primary">Premium</div>
-                <div className="text-xs text-muted-foreground mt-2">
-                  ₦200/month or ₦2,000/year — Renews on Dec 15, 2024
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-border">
-                <div className="text-sm font-medium mb-3">Plan benefits:</div>
-                <ul className="text-xs text-muted-foreground space-y-2">
-                  <li>✓ Unlimited invoices</li>
-                  <li>✓ Unlimited inventory management</li>
-                  <li>✓ Advanced analytics</li>
-                  <li>✓ Team collaboration</li>
-                  <li>✓ Priority support</li>
-                </ul>
-              </div>
-
-              <div className="mt-6 flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => toast.info("Manage billing...")}
-                  className="text-xs md:text-sm"
-                >
-                  Manage billing
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => toast.info("Invoices...")}
-                  className="text-xs md:text-sm"
-                >
-                  View invoices
-                </Button>
-              </div>
             </div>
           </div>
 
