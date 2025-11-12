@@ -5,9 +5,11 @@ import { getBookings, getServices } from "@/lib/data";
 import { useNavigate } from "react-router-dom";
 import { Download, Eye, X } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Payments() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [bookings, setBookings] = useState([]);
   const [services, setServices] = useState([]);
   const [filterStatus, setFilterStatus] = useState("all");

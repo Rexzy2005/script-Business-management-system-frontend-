@@ -3,11 +3,13 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { getClients, addClient, getBookings, getServices } from "@/lib/data";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "@/hooks/useTranslation";
 import { X, Star, Mail, Phone } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Clients() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [clients, setClients] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [services, setServices] = useState([]);

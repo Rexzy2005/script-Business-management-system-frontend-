@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { Check, Zap, TrendingUp, Users, BarChart3, Lock } from "lucide-react";
 import { isAuthenticated, getUser } from "@/lib/auth";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Index() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -29,24 +31,21 @@ export default function Index() {
       <section className="grid gap-8 md:gap-16 lg:grid-cols-2 items-center mb-16 md:mb-24">
         <div>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight">
-            Script — Smart Business Management System for Nigerian SMEs
+            {t("Script — Smart Business Management System for Nigerian SMEs")}
           </h1>
           <p className="mt-4 md:mt-6 text-base md:text-lg text-muted-foreground max-w-xl">
-            All-in-one platform to manage sales, inventory, cash flow, and
-            customer relationships — built for businesses in
-            Nigeria with local payments and practical workflows.
+            {t("All-in-one platform to manage sales, inventory, cash flow, and customer relationships — built for businesses in Nigeria with local payments and practical workflows")}
           </p>
 
           <div className="mt-6 md:mt-8 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <Link to="/signup" className="w-full sm:w-auto">
               <Button size="lg" className="w-full sm:w-auto">
-                Get started — ₦200/month
-                Get started 
+                {t("Get started — ₦200/month")}
               </Button>
             </Link>
             <Link to="/features" className="w-full sm:w-auto">
               <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                See all features
+                {t("See all features")}
               </Button>
             </Link>
           </div>
@@ -72,67 +71,61 @@ export default function Index() {
       {/* Features Grid */}
       <section className="mb-16 md:mb-24">
         <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">
-          Everything you need to run your business
+          {t("Everything you need to run your business")}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           <div className="p-4 md:p-6 bg-card border border-border rounded-lg">
             <Zap className="w-6 h-6 text-primary mb-3" />
             <h4 className="font-semibold text-sm md:text-base">
-              Sales Management
+              {t("Sales Management")}
             </h4>
             <p className="text-xs md:text-sm text-muted-foreground mt-2">
-              Create sales, track payments,
-              and manage stock levels reminders.
+              {t("Create sales, track payments, and manage stock levels reminders")}
             </p>
           </div>
           <div className="p-4 md:p-6 bg-card border border-border rounded-lg">
             <BarChart3 className="w-6 h-6 text-primary mb-3" />
             <h4 className="font-semibold text-sm md:text-base">
-              Inventory Tracking
+              {t("Inventory Tracking")}
             </h4>
             <p className="text-xs md:text-sm text-muted-foreground mt-2">
-              Monitor stock levels, set reorder points, track inventory value,
-              and manage product variations.
+              {t("Monitor stock levels, set reorder points, track inventory value, and manage product variations")}
             </p>
           </div>
           <div className="p-4 md:p-6 bg-card border border-border rounded-lg">
             <TrendingUp className="w-6 h-6 text-primary mb-3" />
             <h4 className="font-semibold text-sm md:text-base">
-              Advanced Analytics
+              {t("Advanced Analytics")}
             </h4>
             <p className="text-xs md:text-sm text-muted-foreground mt-2">
-              Get detailed insights into sales trends, revenue, expenses, and
-              business performance metrics.
+              {t("Get detailed insights into sales trends, revenue, expenses, and business performance metrics")}
             </p>
           </div>
           <div className="p-4 md:p-6 bg-card border border-border rounded-lg">
             <Users className="w-6 h-6 text-primary mb-3" />
             <h4 className="font-semibold text-sm md:text-base">
-              Customer Management
+              {t("Customer Management")}
             </h4>
             <p className="text-xs md:text-sm text-muted-foreground mt-2">
-              Centralize customer data, track communication history, and manage
-              customer relationships.
+              {t("Centralize customer data, track communication history, and manage customer relationships")}
             </p>
           </div>
           <div className="p-4 md:p-6 bg-card border border-border rounded-lg">
             <Users className="w-6 h-6 text-primary mb-3" />
             <h4 className="font-semibold text-sm md:text-base">
-              Team Collaboration
+              {t("Team Collaboration")}
             </h4>
             <p className="text-xs md:text-sm text-muted-foreground mt-2">
-              Add team members, assign roles, delegate tasks, and collaborate
-              seamlessly with your team.
+              {t("Add team members, assign roles, delegate tasks, and collaborate seamlessly with your team")}
             </p>
           </div>
           <div className="p-4 md:p-6 bg-card border border-border rounded-lg">
             <Lock className="w-6 h-6 text-primary mb-3" />
             <h4 className="font-semibold text-sm md:text-base">
-              Secure & Reliable
+              {t("Secure & Reliable")}
             </h4>
             <p className="text-xs md:text-sm text-muted-foreground mt-2">
-              Enterprise-grade security, regular backups, and 99.9% uptime
-              guarantee for your business data.
+              {t("Enterprise-grade security, regular backups, and 99.9% uptime guarantee for your business data")}
             </p>
           </div>
         </div>
@@ -142,37 +135,37 @@ export default function Index() {
       <section className="grid gap-8 md:gap-12 lg:grid-cols-2 items-center mb-16 md:mb-24">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold mb-6">
-            Built for Nigerian businesses
+            {t("Built for Nigerian businesses")}
           </h2>
           <ul className="space-y-4">
             <li className="flex items-start gap-3">
               <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
               <span className="text-sm md:text-base">
-                Local payment integration with Nigerian banks and Flutterwave
+                {t("Local payment integration with Nigerian banks and Flutterwave")}
               </span>
             </li>
             <li className="flex items-start gap-3">
               <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
               <span className="text-sm md:text-base">
-                Support for Nigerian Naira (₦) currency and local tax formats
+                {t("Support for Nigerian Naira (₦) currency and local tax formats")}
               </span>
             </li>
             <li className="flex items-start gap-3">
               <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
               <span className="text-sm md:text-base">
-                Optimized for slow internet with offline-capable features
+                {t("Optimized for slow internet with offline-capable features")}
               </span>
             </li>
             <li className="flex items-start gap-3">
               <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
               <span className="text-sm md:text-base">
-                Practical workflows designed from real Nigerian business needs
+                {t("Practical workflows designed from real Nigerian business needs")}
               </span>
             </li>
             <li className="flex items-start gap-3">
               <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
               <span className="text-sm md:text-base">
-                Affordable pricing that grows with your business
+                {t("Affordable pricing that grows with your business")}
               </span>
             </li>
           </ul>
@@ -182,19 +175,19 @@ export default function Index() {
           <div className="bg-primary/10 border border-primary/20 rounded-lg p-6 text-center">
             <p className="text-3xl font-bold text-primary">500+</p>
             <p className="text-xs md:text-sm text-muted-foreground mt-2">
-              Active businesses
+              {t("Active businesses")}
             </p>
           </div>
           <div className="bg-primary/10 border border-primary/20 rounded-lg p-6 text-center">
             <p className="text-3xl font-bold text-primary">₦2B+</p>
             <p className="text-xs md:text-sm text-muted-foreground mt-2">
-              Tracked in sales
+              {t("Tracked in sales")}
             </p>
           </div>
           <div className="bg-primary/10 border border-primary/20 rounded-lg p-6 text-center">
             <p className="text-3xl font-bold text-primary">99.9%</p>
             <p className="text-xs md:text-sm text-muted-foreground mt-2">
-              Uptime guarantee
+              {t("Uptime guarantee")}
             </p>
           </div>
           <div className="bg-primary/10 border border-primary/20 rounded-lg p-6 text-center">

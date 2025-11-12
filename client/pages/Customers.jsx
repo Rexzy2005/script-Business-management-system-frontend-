@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Customers() {
+  const { t } = useTranslation();
   const [customers, setCustomers] = useState([]);
 
   useEffect(() => {
@@ -14,21 +16,21 @@ export default function Customers() {
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold">Customers</h1>
+            <h1 className="text-2xl md:text-3xl font-extrabold">{t("Customers")}</h1>
             <p className="mt-1 text-xs md:text-sm text-muted-foreground">
-              Manage customer contacts and balances.
+              {t("Manage customer contacts and balances")}.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 md:gap-3 w-full md:w-auto">
             <Button size="sm" className="w-full md:w-auto text-xs md:text-sm">
-              New customer
+              {t("Add Customer")}
             </Button>
             <Button
               variant="outline"
               size="sm"
               className="w-full md:w-auto text-xs md:text-sm"
             >
-              Import
+              {t("Import")}
             </Button>
           </div>
         </div>
@@ -36,7 +38,7 @@ export default function Customers() {
         {customers.length === 0 ? (
           <div className="mt-6 p-8 text-center border border-dashed border-border rounded-lg">
             <p className="text-sm text-muted-foreground">
-              No customers yet. Add your first customer to get started.
+              {t("No customers yet. Add your first customer to get started")}.
             </p>
           </div>
         ) : (
@@ -59,7 +61,7 @@ export default function Customers() {
                     <div className="font-semibold text-sm md:text-base">
                       {c.total}
                     </div>
-                    <div className="text-xs text-muted-foreground">Balance</div>
+                    <div className="text-xs text-muted-foreground">{t("Account Balance")}</div>
                   </div>
                 </li>
               ))}

@@ -19,9 +19,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { getCurrentSubscription } from "@/lib/apiSubscriptions";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Profile() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [user, setUser] = useState(null);
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);

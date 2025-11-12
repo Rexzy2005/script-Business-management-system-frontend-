@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "@/hooks/useTranslation";
 import { isAuthenticated, getUser } from "@/lib/auth";
 import {
   FileText,
@@ -20,6 +21,7 @@ import {
 
 export default function Features() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -38,48 +40,48 @@ export default function Features() {
 
   const features = [
     {
-      title: "Inventory Management",
-      desc: "Track stock levels, manage product variations, set reorder points, and monitor inventory value with ease.",
+      title: t("Inventory Management"),
+      desc: t("Track stock levels, manage product variations, set reorder points, and monitor inventory value with ease."),
       icon: Package,
     },
     {
-      title: "Advanced Analytics",
-      desc: "Get detailed insights into sales trends, revenue patterns, expenses, and business performance with visual reports.",
+      title: t("Advanced Analytics"),
+      desc: t("Get detailed insights into sales trends, revenue patterns, expenses, and business performance with visual reports."),
       icon: BarChart3,
     },
     {
-      title: "Team Collaboration",
-      desc: "Add unlimited team members, assign roles with specific permissions, and work together seamlessly.",
+      title: t("Team Collaboration"),
+      desc: t("Add unlimited team members, assign roles with specific permissions, and work together seamlessly."),
       icon: Clock,
     },
     {
-      title: "Payment Tracking",
-      desc: "Monitor all transactions, track payment status, and reconcile payments with invoices automatically.",
+      title: t("Payment Tracking"),
+      desc: t("Monitor all transactions, track payment status, and reconcile payments with invoices automatically."),
       icon: CreditCard,
     },
     {
-      title: "Sales Management",
-      desc: "Track sales by product, category, and time period. Identify your top-selling products and optimize inventory.",
+      title: t("Sales Management"),
+      desc: t("Track sales by product, category, and time period. Identify your top-selling products and optimize inventory."),
       icon: TrendingUp,
     },
     {
-      title: "Expense Tracking",
-      desc: "Record and categorize business expenses to monitor spending and understand your true business profitability.",
+      title: t("Expense Tracking"),
+      desc: t("Record and categorize business expenses to monitor spending and understand your true business profitability."),
       icon: Target,
     },
     {
-      title: "Automated Alerts",
-      desc: "Get notified about low stock levels, overdue payments, and important business milestones automatically.",
+      title: t("Automated Alerts"),
+      desc: t("Get notified about low stock levels, overdue payments, and important business milestones automatically."),
       icon: Bell,
     },
     {
-      title: "Reports & Exports",
-      desc: "Generate comprehensive business reports and export data in multiple formats for analysis and sharing.",
+      title: t("Reports & Exports"),
+      desc: t("Generate comprehensive business reports and export data in multiple formats for analysis and sharing."),
       icon: Download,
     },
     {
-      title: "Data Security",
-      desc: "Enterprise-grade encryption, regular backups, and role-based access controls to keep your data safe.",
+      title: t("Data Security"),
+      desc: t("Enterprise-grade encryption, regular backups, and role-based access controls to keep your data safe."),
       icon: Lock,
     },
     
@@ -90,12 +92,10 @@ export default function Features() {
       <section className="max-w-6xl mx-auto">
         <div className="text-center mb-12 md:mb-16">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold">
-            Everything you need to manage your business
+            {t("Everything you need to manage your business")}
           </h1>
           <p className="mt-4 md:mt-6 text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
-            Script combines invoicing, inventory, analytics, team management,
-            and customer tools into one simple platform — designed specifically
-            for Nigerian product sellers.
+            {t("Script combines invoicing, inventory, analytics, team management, and customer tools into one simple platform — designed specifically for Nigerian product sellers.")}
           </p>
         </div>
 
@@ -120,67 +120,63 @@ export default function Features() {
         {/* Feature Highlights Section */}
         <section className="mb-12 md:mb-16">
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">
-            Built for Nigerian businesses
+            {t("Built for Nigerian businesses")}
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 md:p-8">
               <h3 className="text-lg md:text-xl font-semibold mb-4">
-                Local Payment Integration
+                {t("Local Payment Integration")}
               </h3>
               <p className="text-sm md:text-base text-muted-foreground mb-4">
-                Seamlessly integrate with Nigerian payment systems including
-                Flutterwave, local bank transfers, and USSD payments.
+                {t("Seamlessly integrate with Nigerian payment systems including Flutterwave, local bank transfers, and USSD payments.")}
               </p>
               <ul className="space-y-2 text-sm">
-                <li>✓ Naira (₦) currency support</li>
-                <li>✓ Local tax format compliance</li>
-                <li>✓ Multiple payment gateway options</li>
+                <li>✓ {t("Naira currency support")}</li>
+                <li>✓ {t("Local tax format compliance")}</li>
+                <li>✓ {t("Multiple payment gateway options")}</li>
               </ul>
             </div>
 
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 md:p-8">
               <h3 className="text-lg md:text-xl font-semibold mb-4">
-                Optimized Performance
+                {t("Optimized Performance")}
               </h3>
               <p className="text-sm md:text-base text-muted-foreground mb-4">
-                Designed to work efficiently even with slower internet
-                connections. Lightweight, fast, and reliable.
+                {t("Designed to work efficiently even with slower internet connections. Lightweight, fast, and reliable.")}
               </p>
               <ul className="space-y-2 text-sm">
-                <li>✓ Works offline with sync</li>
-                <li>✓ Mobile-optimized interface</li>
-                <li>✓ Fast loading times</li>
+                <li>✓ {t("Works offline with sync")}</li>
+                <li>✓ {t("Mobile-optimized interface")}</li>
+                <li>✓ {t("Fast loading times")}</li>
               </ul>
             </div>
 
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 md:p-8">
               <h3 className="text-lg md:text-xl font-semibold mb-4">
-                Practical Workflows
+                {t("Practical Workflows")}
               </h3>
               <p className="text-sm md:text-base text-muted-foreground mb-4">
-                Built from real feedback from Nigerian business owners.
-                Workflows designed for practical, everyday business needs.
+                {t("Built from real feedback from Nigerian business owners. Workflows designed for practical, everyday business needs.")}
               </p>
               <ul className="space-y-2 text-sm">
-                <li>✓ Quick data entry</li>
-                <li>✓ Bulk operations</li>
-                <li>✓ Smart defaults</li>
+                <li>✓ {t("Quick data entry")}</li>
+                <li>✓ {t("Bulk operations")}</li>
+                <li>✓ {t("Smart defaults")}</li>
               </ul>
             </div>
 
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 md:p-8">
               <h3 className="text-lg md:text-xl font-semibold mb-4">
-                Enterprise Security
+                {t("Enterprise Security")}
               </h3>
               <p className="text-sm md:text-base text-muted-foreground mb-4">
-                Your business data is protected with bank-level security,
-                regular backups, and compliance standards.
+                {t("Your business data is protected with bank-level security, regular backups, and compliance standards.")}
               </p>
               <ul className="space-y-2 text-sm">
-                <li>✓ 99.9% uptime guarantee</li>
-                <li>✓ Automatic daily backups</li>
-                <li>✓ Role-based access control</li>
+                <li>✓ {t("99.9% uptime guarantee")}</li>
+                <li>✓ {t("Automatic daily backups")}</li>
+                <li>✓ {t("Role-based access control")}</li>
               </ul>
             </div>
           </div>
@@ -189,7 +185,7 @@ export default function Features() {
         {/* Feature Comparison */}
         <section className="mb-12 md:mb-16">
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">
-            Everything in one place
+            {t("Everything in one place")}
           </h2>
 
           <div className="bg-card border border-border rounded-lg overflow-hidden">
@@ -197,24 +193,24 @@ export default function Features() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-card border-b border-border">
-                    <th className="text-left p-4 font-semibold">Feature</th>
-                    <th className="text-center p-4 font-semibold">Included</th>
+                    <th className="text-left p-4 font-semibold">{t("Feature")}</th>
+                    <th className="text-center p-4 font-semibold">{t("Included")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[
-                    "Unlimited invoice creation and templates",
-                    "Unlimited inventory management",
-                    "Advanced analytics and reports",
-                    "Customer database and management",
-                    "Up to unlimited team members",
-                    "Payment and transaction tracking",
-                    "Expense management and budgeting",
-                    "Sales analytics and insights",
-                    "Mobile app access",
-                    "API access for integrations",
-                    "Data export in multiple formats",
-                    "24/7 priority support",
+                    t("Unlimited invoice creation and templates"),
+                    t("Unlimited inventory management"),
+                    t("Advanced analytics and reports"),
+                    t("Customer database and management"),
+                    t("Up to unlimited team members"),
+                    t("Payment and transaction tracking"),
+                    t("Expense management and budgeting"),
+                    t("Sales analytics and insights"),
+                    t("Mobile app access"),
+                    t("API access for integrations"),
+                    t("Data export in multiple formats"),
+                    t("24/7 priority support"),
                   ].map((feature, idx) => (
                     <tr
                       key={idx}
@@ -237,21 +233,21 @@ export default function Features() {
         {/* CTA Section */}
         <div className="text-center bg-secondary/5 border border-border rounded-lg p-8 md:p-12">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">
-            Ready to transform your business?
+            {t("Ready to transform your business?")}
           </h2>
           <p className="text-base md:text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Start managing your business with Script today.
+            {t("Start managing your business with Script today.")}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link to="/signup">
               <Button size="lg" className="w-full sm:w-auto">
-                Get started
+                {t("Get started")}
               </Button>
             </Link>
             <Link to="/pricing">
               <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                View pricing
+                {t("View pricing")}
               </Button>
             </Link>
           </div>
