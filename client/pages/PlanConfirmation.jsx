@@ -5,7 +5,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { flutterwaveCheckout } from "@/lib/flutterwave";
 import { PLAN_AMOUNTS } from "@/lib/paymentConfig";
+import { registerWithPayment, verifySignupPayment } from "@/lib/apiAuth";
+import { getApiBaseUrl } from "@/lib/api";
 import { Check } from "lucide-react";
+import { PLANS, PLAN_TYPES, getPlanAmount } from "@/lib/plans";
 
 export default function PlanConfirmation() {
   const { state } = useLocation();
@@ -24,69 +27,85 @@ export default function PlanConfirmation() {
 
     setIsLoading(true);
     try {
-      // Step 1: Initialize payment session on backend
-      // We do NOT create the user yet. The backend will store the pending
-      // signup data together with the tx_ref so that after verification the
-      // user is created atomically.
-      const initPayload = {
-        signup: {
-          name: state.name,
-          email: state.email,
-          phone: state.phone,
-          password: state.password,
-          businessName: state.businessName,
-          businessType: state.businessType || "product_seller",
-          plan: state.plan || "standard",
-        },
+      // Get plan type from state or default to monthly
+      const planType = state.planType || PLAN_TYPES.MONTHLY;
+
+      // Step 1: Register user and initialize payment on backend
+      // Backend creates pending user account and returns payment details
+      const signupPayload = {
+        businessName: state.businessName || state.name,
+        email: state.email,
+        phone: state.phone || "",
+        password: state.password,
+        planType: planType,
       };
 
-      const paymentInitResponse = await fetch("/api/payments/initialize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(initPayload),
-      });
-
-      if (!paymentInitResponse.ok) {
-        throw new Error("Failed to initialize payment");
+      const registerData = await registerWithPayment(signupPayload);
+      
+      if (!registerData.success || !registerData.payment) {
+        throw new Error(registerData.message || "Payment initialization failed");
       }
 
-      const paymentSession = await paymentInitResponse.json();
-      if (paymentSession.status !== "success") {
-        throw new Error(paymentSession.message || "Payment initialization failed");
-      }
+      const { payment } = registerData;
+      const { tx_ref, amount, customer } = payment;
 
-      // Step 4: Open Flutterwave checkout modal
+      // Step 2: Open Flutterwave checkout modal
       await flutterwaveCheckout({
-        amount: paymentSession.amount,
+        amount: amount, // Amount in Naira (200)
         currency: "NGN",
-        tx_ref: paymentSession.tx_ref,
-        customer: paymentSession.customer,
+        tx_ref: tx_ref,
+        customer: {
+          email: customer.email,
+          phone: customer.phone,
+          name: customer.name,
+        },
         onSuccess: async (data) => {
-          // data contains transaction_id and tx_ref
+          // data contains transaction_id and tx_ref from Flutterwave
           try {
-            // Step 5: Ask backend to verify & finalize signup (create user)
-            const verifyRes = await fetch("/api/payments/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                id: data.transaction_id,
-                tx_ref: data.tx_ref,
-                // include signup payload so backend can create user now
-                signup: initPayload.signup,
-                amount: paymentSession.amount,
-              }),
-            });
-
-            const verified = await verifyRes.json().catch(() => null);
-            if (verifyRes.ok && verified?.status === "success") {
-              toast.success("Payment verified — account created.");
-              setTimeout(() => navigate("/dashboard"), 800);
+            // Step 3: Verify payment with backend and activate account
+            const verifyData = await verifySignupPayment(
+              data.transaction_id || data.id,
+              data.tx_ref || tx_ref
+            );
+            
+            if (verifyData.success) {
+              // Import auth functions to properly set user state
+              const { setCurrentUser } = await import("@/lib/auth");
+              const { getAuthToken } = await import("@/lib/api");
+              
+              // Store user data if provided
+              if (verifyData.user) {
+                setCurrentUser(verifyData.user);
+              }
+              
+              // Verify token is stored before redirecting
+              let tokenStored = false;
+              for (let i = 0; i < 10; i++) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                const token = getAuthToken();
+                if (token) {
+                  tokenStored = true;
+                  break;
+                }
+              }
+              
+              if (!tokenStored) {
+                console.warn("Token not stored after payment verification, but proceeding with redirect");
+              }
+              
+              toast.success("Payment verified! Your account has been activated.");
+              
+              // Small delay to ensure toast is visible, then redirect
+              setTimeout(() => {
+                // Use window.location for full page reload to ensure fresh auth state
+                window.location.href = "/dashboard";
+              }, 1000);
             } else {
-              toast.error(verified?.message || "Payment verification failed");
+              toast.error(verifyData.message || "Payment verification failed");
             }
           } catch (e) {
             console.error("Verification error:", e);
-            toast.error("Failed to verify payment or create account");
+            toast.error("Failed to verify payment. Please contact support.");
           }
         },
         onClose: () => {
@@ -115,9 +134,15 @@ export default function PlanConfirmation() {
               </p>
             </div>
             <div className="text-right">
-              <div className="text-lg font-bold">Standard</div>
-              <div className="text-2xl font-extrabold">₦200</div>
-              <div className="text-sm text-muted-foreground">/month</div>
+              <div className="text-lg font-bold">
+                {state?.planType === PLAN_TYPES.YEARLY ? "Yearly" : "Monthly"} Premium
+              </div>
+              <div className="text-2xl font-extrabold">
+                ₦{getPlanAmount(state?.planType || PLAN_TYPES.MONTHLY).toLocaleString()}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                /{state?.planType === PLAN_TYPES.YEARLY ? "year" : "month"}
+              </div>
             </div>
           </div>
 
@@ -172,7 +197,7 @@ export default function PlanConfirmation() {
                 >
                   {isLoading
                     ? "Processing..."
-                    : "Pay ₦200 & Activate Account"}
+                    : `Pay ₦${getPlanAmount(state?.planType || PLAN_TYPES.MONTHLY).toLocaleString()} & Activate Account`}
                 </Button>
               </div>
 

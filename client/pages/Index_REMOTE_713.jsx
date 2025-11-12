@@ -40,7 +40,6 @@ export default function Index() {
           <div className="mt-6 md:mt-8 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <Link to="/signup" className="w-full sm:w-auto">
               <Button size="lg" className="w-full sm:w-auto">
-                Get started — ₦200/month
                 Get started 
               </Button>
             </Link>

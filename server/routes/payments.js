@@ -286,9 +286,9 @@ export const initializePayment = async (req, res) => {
   try {
     // Validate plan exists and get amount (stored in cents)
     const planAmounts = {
-      standard: 50000, // ₦500 in kobo/cents
-      premium: 100000, // ₦1000
-      annual: 500000, // ₦5000
+      standard: 20000, // ₦200 in kobo/cents
+      premium: 20000, // ₦200
+      annual: 200000, // ₦2000
     };
 
     if (!planAmounts[plan]) {

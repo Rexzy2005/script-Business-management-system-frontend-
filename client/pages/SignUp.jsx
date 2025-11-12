@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { isAuthenticated, getUser } from "@/lib/auth";
 
@@ -15,6 +15,7 @@ export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -50,6 +51,7 @@ export default function SignUp() {
     // Pass form data via location state.
     setIsLoading(true);
     try {
+      const { state: locationState } = location;
       navigate("/signup/plan", {
         state: {
           name: business,
@@ -58,7 +60,8 @@ export default function SignUp() {
           password,
           businessName: business,
           businessType: businessType || "product provider seller",
-          plan: "standard",
+          plan: "premium",
+          planType: locationState?.planType || "monthly", // Get planType from location state or default to monthly
         },
       });
     } finally {
