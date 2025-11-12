@@ -4,6 +4,14 @@ import Footer from "@/components/Footer";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { isAuthenticated, getUser, signOut } from "@/lib/auth";
 import { toast } from "sonner";
+import { Globe } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Layout({ children, fullWidth = false }) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
@@ -11,6 +19,7 @@ export default function Layout({ children, fullWidth = false }) {
   const authed = isAuthenticated();
   const user = getUser();
   const location = useLocation();
+  const { language, changeLanguage, supportedLanguages, t } = useTranslation();
 
   React.useEffect(() => {
     if (sidebarOpen) {
@@ -36,14 +45,14 @@ export default function Layout({ children, fullWidth = false }) {
   };
 
   const protectedLinks = [
-    { to: "/dashboard", label: "Dashboard" },
-    { to: "/profile", label: "Profile" },
-    { to: "/analytics", label: "Analytics" },
-    { to: "/inventory", label: "Inventory" },
-    { to: "/sales", label: "Sales" },
-    { to: "/expenses", label: "Expenses" },
-    { to: "/team", label: "Team" },
-    { to: "/settings", label: "Settings" },
+    { to: "/dashboard", labelKey: "Dashboard" },
+    { to: "/profile", labelKey: "Profile" },
+    { to: "/analytics", labelKey: "Analytics" },
+    { to: "/inventory", labelKey: "Inventory" },
+    { to: "/sales", labelKey: "Sales" },
+    { to: "/expenses", labelKey: "Expenses" },
+    { to: "/team", labelKey: "Team" },
+    { to: "/settings", labelKey: "Settings" },
   ];
 
   return (
@@ -76,17 +85,36 @@ export default function Layout({ children, fullWidth = false }) {
                       `px-3 py-2 rounded-md text-xs md:text-sm transition-colors ${isActive ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`
                     }
                   >
-                    {l.label}
+                    {t(l.labelKey)}
                   </NavLink>
                 ))}
               </nav>
 
               <div className="border-t border-border pt-4 mt-4">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="w-full flex items-center justify-between px-3 py-2 rounded-md text-xs md:text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors mb-2">
+                      <Globe size={16} />
+                      <span>{language.toUpperCase()}</span>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {Object.entries(supportedLanguages).map(([code, name]) => (
+                      <DropdownMenuItem
+                        key={code}
+                        onClick={() => changeLanguage(code)}
+                        className={language === code ? "bg-accent" : ""}
+                      >
+                        {name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <button
                   onClick={handleSignOut}
                   className="w-full px-3 py-2 rounded-md text-xs md:text-sm text-destructive hover:bg-destructive/10 transition-colors text-left"
                 >
-                  Sign out
+                  {t("Sign out")}
                 </button>
               </div>
             </aside>
@@ -100,7 +128,24 @@ export default function Layout({ children, fullWidth = false }) {
                 <div className="md:hidden fixed inset-0 z-50 bg-sidebar flex flex-col">
                   <div className="p-4 flex items-center justify-between border-b border-border">
                     <div className="flex items-center gap-2">
-                      <img src="/logo g.svg" alt="Script logo" className="w-10 h-auto" />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors" aria-label="Change language">
+                            <Globe size={18} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          {Object.entries(supportedLanguages).map(([code, name]) => (
+                            <DropdownMenuItem
+                              key={code}
+                              onClick={() => changeLanguage(code)}
+                              className={language === code ? "bg-accent" : ""}
+                            >
+                              {name}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                     <button
                       onClick={() => setSidebarOpen(false)}
@@ -135,7 +180,7 @@ export default function Layout({ children, fullWidth = false }) {
                             `px-3 py-2 rounded-md text-sm transition-colors ${isActive ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`
                           }
                         >
-                          {l.label}
+                          {t(l.labelKey)}
                         </NavLink>
                       ))}
                     </nav>
@@ -145,7 +190,7 @@ export default function Layout({ children, fullWidth = false }) {
                       onClick={handleSignOut}
                       className="w-full px-3 py-2 rounded-md text-sm text-destructive hover:bg-destructive/10 transition-colors text-left"
                     >
-                      Sign out
+                      {t("Sign out")}
                     </button>
                   </div>
                 </div>
@@ -155,11 +200,23 @@ export default function Layout({ children, fullWidth = false }) {
         )}
 
         <main className="flex-1 w-full overflow-y-auto flex flex-col">
-          <div
-            className={`flex-1 ${fullWidth ? "px-0 md:py-8" : "px-4 py-6 md:py-8"} w-full ${fullWidth ? "max-w-full mx-0" : "max-w-7xl mx-auto"}`}
-          >
-            {children}
-          </div>
+          {/*
+            Use a consistent responsive container across the app.
+            Best practice: cap content to a readable width (screen-xl ~1280px)
+            while providing sensible horizontal padding at different breakpoints.
+            Preserve `fullWidth` prop to allow pages that require edge-to-edge layouts.
+          */}
+          {(() => {
+            const containerClass = fullWidth
+              ? "max-w-full mx-0 px-0 md:py-8"
+              : "max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8";
+
+            return (
+              <div className={`flex-1 w-full ${containerClass}`}>
+                {children}
+              </div>
+            );
+          })()}
           {location.pathname === "/" && <Footer />}
         </main>
       </div>

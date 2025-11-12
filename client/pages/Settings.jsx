@@ -6,9 +6,11 @@ import { updateCurrentUser } from "@/lib/apiAuth";
 import { useNavigate } from "react-router-dom";
 import { Save, X } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Settings() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const user = getUser();
   const [formData, setFormData] = useState({
     timezone: user?.settings?.timezone || "Africa/Lagos",

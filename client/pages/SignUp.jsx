@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "@/hooks/useTranslation";
 import { toast } from "sonner";
 import { isAuthenticated, getUser } from "@/lib/auth";
 
@@ -16,6 +17,7 @@ export default function SignUp() {
   const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -40,7 +42,7 @@ export default function SignUp() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!business || !email || !password) {
-      return toast.error("Please fill required fields");
+      return toast.error(t("Please fill required fields"));
     }
     handleSignUp();
   };
@@ -96,7 +98,7 @@ export default function SignUp() {
             <div className="bg-card border border-border md:rounded-r-lg p-6 md:p-8 w-full max-w-lg">
               <img src="/logo g.svg" alt="Logo" className="h-8 mb-6" />
               <h2 className="text-2xl md:text-3xl font-semibold">
-                Get started with Script
+                {t("Get started")} with Script
               </h2>
               <p className="text-sm text-muted-foreground mt-2">
                 Complete business management for ₦200/month or ₦2,000/year
@@ -108,7 +110,7 @@ export default function SignUp() {
               >
               <label>
                 <div className="text-xs md:text-sm font-medium mb-2">
-                  Business name *
+                  {t("Business Name")} *
                 </div>
                 <input
                   value={business}
@@ -122,7 +124,7 @@ export default function SignUp() {
 
               <label>
                 <div className="text-xs md:text-sm font-medium mb-2">
-                  Email address *
+                  {t("Email address")} *
                 </div>
                 <input
                   value={email}
@@ -138,7 +140,7 @@ export default function SignUp() {
 
               <label>
                 <div className="text-xs md:text-sm font-medium mb-2">
-                  Phone number (optional)
+                  {t("Phone number")} (optional)
                 </div>
                 <input
                   value={phone}
@@ -154,7 +156,7 @@ export default function SignUp() {
 
               <label>
                 <div className="text-xs md:text-sm font-medium mb-2">
-                  Password *
+                  {t("Password")} *
                 </div>
                 <div className="relative">
                   <input
@@ -174,11 +176,11 @@ export default function SignUp() {
                     aria-pressed={showPassword}
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? "Hide" : "Show"}
+                    {showPassword ? t("Hide") : t("Show")}
                   </button>
                 </div>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  Use at least 8 characters with a mix of letters and numbers.
+                  {t("Use at least 8 characters with a mix of letters and numbers")}.
                 </p>
               </label>
 
@@ -189,18 +191,18 @@ export default function SignUp() {
                   className="w-full"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Creating account..." : "Create account"}
+                  {isLoading ? t("Creating account") + "..." : t("Create account")}
                 </Button>
               </div>
               </form>
 
                 <div className="mt-4 text-xs md:text-sm text-muted-foreground">
-                  Already have an account?{" "}
+                  {t("Already have an account?")} {" "}
                   <Link
                     to="/signin"
                     className="text-primary underline hover:no-underline"
                   >
-                    Sign in
+                    {t("Sign in")}
                   </Link>
                 </div>
             </div>

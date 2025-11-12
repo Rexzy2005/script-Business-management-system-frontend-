@@ -3,6 +3,7 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { getBookings, getServices } from "@/lib/data";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "@/hooks/useTranslation";
 import {
   BarChart,
   Bar,
@@ -21,6 +22,7 @@ import {
 
 export default function Reports() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [bookings, setBookings] = useState([]);
   const [services, setServices] = useState([]);
   const [dateRange, setDateRange] = useState("month");

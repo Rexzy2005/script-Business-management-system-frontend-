@@ -1,7 +1,14 @@
 import React from "react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { isAuthenticated, getUser, signOut } from "@/lib/auth";
+import { useTranslation } from "@/hooks/useTranslation";
 import { toast } from "sonner";
 
 export default function Header({ onToggle }) {
@@ -9,6 +16,7 @@ export default function Header({ onToggle }) {
   const location = useLocation();
   const [authed, setAuthed] = React.useState(isAuthenticated());
   const user = getUser();
+  const { t, language, changeLanguage, supportedLanguages } = useTranslation();
 
   React.useEffect(() => {
     const onAuth = () => setAuthed(isAuthenticated());
@@ -48,7 +56,7 @@ export default function Header({ onToggle }) {
                   : "text-muted-foreground hover:text-foreground text-sm"
               }
             >
-              Features
+              {t("Features")}
             </NavLink>
             <NavLink
               to="/pricing"
@@ -58,7 +66,7 @@ export default function Header({ onToggle }) {
                   : "text-muted-foreground hover:text-foreground text-sm"
               }
             >
-              Pricing
+              {t("Pricing")}
             </NavLink>
             <NavLink
               to="/solutions"
@@ -68,26 +76,46 @@ export default function Header({ onToggle }) {
                   : "text-muted-foreground hover:text-foreground text-sm"
               }
             >
-              Solutions
+              {t("Solutions")}
             </NavLink>
           </nav>
         )}
 
         <div className="flex items-center gap-2 md:gap-3">
+          {/* Language Switcher */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="text-xs md:text-sm">
+                {language.toUpperCase()}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {Object.entries(supportedLanguages).map(([code, name]) => (
+                <DropdownMenuItem
+                  key={code}
+                  onClick={() => changeLanguage(code)}
+                  className={language === code ? "bg-accent" : ""}
+                >
+                  {name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {authed ? (
             <>
               <Link
                 to="/dashboard"
                 className="hidden md:inline text-xs md:text-sm text-muted-foreground hover:text-foreground"
               >
-                Dashboard
+                {t("Dashboard")}
               </Link>
               <div className="hidden md:flex items-center gap-2 md:gap-3">
                 <div className="text-xs md:text-sm text-muted-foreground truncate">
                   {user?.name}
                 </div>
                 <Button size="sm" variant="outline" onClick={handleSignOut}>
-                  Sign out
+                  {t("Sign out")}
                 </Button>
               </div>
               <button
@@ -118,11 +146,11 @@ export default function Header({ onToggle }) {
                 to="/signin"
                 className="text-xs md:text-sm text-muted-foreground hover:text-foreground"
               >
-                Sign in
+                {t("Sign in")}
               </Link>
               <Link to="/signup">
                 <Button size="sm" className="text-xs md:text-sm px-2 md:px-4">
-                  Get Started
+                  {t("Get Started")}
                 </Button>
               </Link>
             </>

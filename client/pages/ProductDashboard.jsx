@@ -3,6 +3,7 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { getInventory, getSales, getClients, getExpenses } from "@/lib/data";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "@/hooks/useTranslation";
 import { on } from "@/lib/eventBus";
 import { getUser } from "@/lib/auth";
 
@@ -21,6 +22,7 @@ function formatCurrency(n) {
 
 export default function ProductDashboard() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [inventory, setInventory] = useState([]);
   const [sales, setSales] = useState([]);
   const [clients, setClients] = useState([]);
@@ -190,16 +192,16 @@ export default function ProductDashboard() {
     <Layout>
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-extrabold">Welcome back!</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold">{t("Welcome back")}</h1>
           <p className="mt-1 text-xs md:text-sm text-muted-foreground">
-            Here's a quick look at your product business.
+            {t("Here's a quick look at your product business")}.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
           <div className="p-4 bg-card border border-border rounded-lg">
             <div className="text-xs md:text-sm text-muted-foreground">
-              Sales (This Month)
+              {t("Sales")} ({t("This Month")})
             </div>
             <div className="text-xl md:text-2xl font-bold mt-2">
               {formatCurrency(monthlySales)}
@@ -210,13 +212,13 @@ export default function ProductDashboard() {
                   (s) => !s.createdAt || new Date(s.createdAt) >= monthAgo,
                 ).length
               }{" "}
-              sales
+              {t("sales")}
             </div>
           </div>
 
           <div className="p-4 bg-card border border-border rounded-lg">
             <div className="text-xs md:text-sm text-muted-foreground">
-              Expenses (This Month)
+              {t("Expenses")} ({t("This Month")})
             </div>
             <div className="text-xl md:text-2xl font-bold mt-2">
               {formatCurrency(monthlyExpenses)}
@@ -227,32 +229,32 @@ export default function ProductDashboard() {
                   (e) => e?.date && String(e.date).startsWith(currentMonth),
                 ).length
               }{" "}
-              expenses
+              {t("expenses")}
             </div>
           </div>
 
           <div className="p-4 bg-card border border-border rounded-lg">
             <div className="text-xs md:text-sm text-muted-foreground">
-              Stock levels
+              {t("Stock levels")}
             </div>
             <div className="text-sm md:text-base font-semibold mt-2 flex gap-4">
-              <span className="text-red-600">Low: {lowCount}</span>
-              <span className="text-green-600">InStock: {inStockCount}</span>
+              <span className="text-red-600">{t("Low")}: {lowCount}</span>
+              <span className="text-green-600">{t("InStock")}: {inStockCount}</span>
             </div>
             <div className="mt-3 text-xs text-muted-foreground">
-              Total items: {inventory.length}
+              {t("Total items")}: {inventory.length}
             </div>
           </div>
 
           <div className="p-4 bg-card border border-border rounded-lg">
             <div className="text-xs md:text-sm text-muted-foreground">
-              Profit (This Month)
+              {t("Profit")} ({t("This Month")})
             </div>
             <div className="text-xl md:text-2xl font-bold mt-2">
               {formatCurrency(monthlyProfit)}
             </div>
             <div className="mt-3 text-xs text-muted-foreground">
-              Sales − Expenses
+              {t("Sales")} − {t("Expenses")}
             </div>
           </div>
         </div>
@@ -260,7 +262,7 @@ export default function ProductDashboard() {
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="p-4 md:p-6 bg-card border border-border rounded-lg">
             <h3 className="font-semibold text-sm md:text-base">
-              Recent activity
+              {t("Recent activity")}
             </h3>
             <ul className="mt-4 space-y-3 text-xs md:text-sm text-muted-foreground">
               {allActivities.length > 0 ? (
@@ -279,7 +281,7 @@ export default function ProductDashboard() {
                       firstItem?.name ||
                       activity.itemName ||
                       activity.name ||
-                      "Unknown item";
+                      t("Unknown item");
                     return (
                       <li
                         key={`${activity.type}-${activity.id || idx}`}
@@ -287,7 +289,7 @@ export default function ProductDashboard() {
                       >
                         <div className="flex-1">
                           <span className="inline-block px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded mr-2">
-                            Sale
+                            {t("Sale")}
                           </span>
                           {itemName} —{" "}
                           {formatCurrency(parseCurrencyValue(saleAmount))}
@@ -304,9 +306,9 @@ export default function ProductDashboard() {
                       >
                         <div className="flex-1">
                           <span className="inline-block px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded mr-2">
-                            Expense
+                            {t("Expense")}
                           </span>
-                          {activity.description || "Expense"} —{" "}
+                          {activity.description || t("Expense")} —{" "}
                           {formatCurrency(parseCurrencyValue(expenseAmount))}
                         </div>
                       </li>
@@ -315,7 +317,7 @@ export default function ProductDashboard() {
                 })
               ) : (
                 <>
-                  <li>No recent activity</li>
+                  <li>{t("No recent activity")}</li>
                 </>
               )}
             </ul>
@@ -323,7 +325,7 @@ export default function ProductDashboard() {
 
           <div className="p-4 md:p-6 bg-card border border-border rounded-lg">
             <h3 className="font-semibold text-sm md:text-base">
-              Quick actions
+              {t("Quick actions")}
             </h3>
             <div className="mt-4 flex flex-col gap-2 md:gap-3">
               <Button
@@ -331,7 +333,7 @@ export default function ProductDashboard() {
                 onClick={() => navigate("/inventory")}
                 className="w-full text-xs md:text-sm"
               >
-                Add New Product
+                {t("Add New Product")}
               </Button>
               <Button
                 variant="outline"
@@ -339,7 +341,7 @@ export default function ProductDashboard() {
                 onClick={() => navigate("/expenses")}
                 className="w-full text-xs md:text-sm"
               >
-                See Expenses
+                {t("See Expenses")}
               </Button>
               <Button
                 variant="ghost"
@@ -347,7 +349,7 @@ export default function ProductDashboard() {
                 onClick={() => navigate("/sales")}
                 className="w-full text-xs md:text-sm"
               >
-                Add New Sale
+                {t("Add New Sale")}
               </Button>
             </div>
           </div>
