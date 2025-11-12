@@ -38,11 +38,6 @@ export default function Features() {
 
   const features = [
     {
-      title: "Professional Invoicing",
-      desc: "Create branded invoices, send digitally, and track payment status in real-time. Automated reminders for overdue payments.",
-      icon: FileText,
-    },
-    {
       title: "Inventory Management",
       desc: "Track stock levels, manage product variations, set reorder points, and monitor inventory value with ease.",
       icon: Package,
@@ -51,11 +46,6 @@ export default function Features() {
       title: "Advanced Analytics",
       desc: "Get detailed insights into sales trends, revenue patterns, expenses, and business performance with visual reports.",
       icon: BarChart3,
-    },
-    {
-      title: "Customer Database",
-      desc: "Centralize all customer information, track communication history, and manage customer relationships effectively.",
-      icon: Users,
     },
     {
       title: "Team Collaboration",
@@ -92,11 +82,7 @@ export default function Features() {
       desc: "Enterprise-grade encryption, regular backups, and role-based access controls to keep your data safe.",
       icon: Lock,
     },
-    {
-      title: "Easy Sharing",
-      desc: "Share business profile with customers, generate QR codes, and showcase your products with a public storefront.",
-      icon: Share2,
-    },
+    
   ];
 
   return (

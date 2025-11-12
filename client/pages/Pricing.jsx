@@ -27,9 +27,15 @@ export default function Pricing() {
   }, [navigate]);
 
   const plan = {
+<<<<<<< HEAD
+    name: "Standard",
+    monthlyPrice: "₦200",
+    yearlyPrice: "₦2,000",
+=======
     name: "Premium",
     monthlyPrice: PLANS.PREMIUM.monthlyNaira,
     yearlyPrice: PLANS.PREMIUM.yearlyNaira,
+>>>>>>> eb198612f1df436f38fc930acc935689909d51e9
     features: [
       "Unlimited inventory tracking",
       "Advanced analytics & reporting",
