@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/hooks/useTranslation";
 import { on } from "@/lib/eventBus";
 import { getUser } from "@/lib/auth";
+import { useTranslation } from "@/hooks/useTranslation";
+import { UIText } from "@/lib/uiText";
 
 function parseCurrencyValue(val) {
   if (typeof val === "number") return val;
@@ -27,6 +29,38 @@ export default function ProductDashboard() {
   const [sales, setSales] = useState([]);
   const [clients, setClients] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const translationSource = React.useMemo(
+    () => ({
+      welcomeBack: "Welcome back!",
+      welcomeSummary: "Here's a quick look at your product business.",
+      salesThisMonth: "Sales (This Month)",
+      expensesThisMonth: "Expenses (This Month)",
+      profitThisMonth: "Profit (This Month)",
+      stockLevels: "Stock levels",
+      salesCountLabel: "sales",
+      expensesCountLabel: "expenses",
+      lowLabel: "Low",
+      inStockLabel: "In stock",
+      totalItems: "Total items",
+      recentActivity: UIText.dashboard.recentActivity,
+      quickActions: UIText.dashboard.quickActions,
+      noRecentActivity: "No recent activity",
+      saleTag: "Sale",
+      expenseTag: "Expense",
+      unknownItem: "Unknown item",
+      expenseFallback: "Expense",
+      salesMinusExpenses: "Sales − Expenses",
+      addProduct: "Add New Product",
+      seeExpenses: "See Expenses",
+      addSale: "Add New Sale",
+    }),
+    [],
+  );
+  const { translatedText: dashboardText } = useTranslation(translationSource);
+  const getText = React.useCallback(
+    (key, fallback) => (dashboardText && dashboardText[key] ? dashboardText[key] : fallback),
+    [dashboardText],
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -192,16 +226,18 @@ export default function ProductDashboard() {
     <Layout>
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-extrabold">{t("Welcome back")}</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold">{getText("welcomeBack", "Welcome back!")}</h1>
           <p className="mt-1 text-xs md:text-sm text-muted-foreground">
-            {t("Here's a quick look at your product business")}.
+            {getText("welcomeSummary", "Here's a quick look at your product business.")}
+
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
           <div className="p-4 bg-card border border-border rounded-lg">
             <div className="text-xs md:text-sm text-muted-foreground">
-              {t("Sales")} ({t("This Month")})
+              {getText("salesThisMonth", "Sales (This Month)")}
+
             </div>
             <div className="text-xl md:text-2xl font-bold mt-2">
               {formatCurrency(monthlySales)}
@@ -212,13 +248,15 @@ export default function ProductDashboard() {
                   (s) => !s.createdAt || new Date(s.createdAt) >= monthAgo,
                 ).length
               }{" "}
-              {t("sales")}
+              {getText("salesCountLabel", "sales")}
+
             </div>
           </div>
 
           <div className="p-4 bg-card border border-border rounded-lg">
             <div className="text-xs md:text-sm text-muted-foreground">
-              {t("Expenses")} ({t("This Month")})
+              {getText("expensesThisMonth", "Expenses (This Month)")}
+
             </div>
             <div className="text-xl md:text-2xl font-bold mt-2">
               {formatCurrency(monthlyExpenses)}
@@ -229,32 +267,43 @@ export default function ProductDashboard() {
                   (e) => e?.date && String(e.date).startsWith(currentMonth),
                 ).length
               }{" "}
-              {t("expenses")}
+              {getText("expensesCountLabel", "expenses")}
+
             </div>
           </div>
 
           <div className="p-4 bg-card border border-border rounded-lg">
             <div className="text-xs md:text-sm text-muted-foreground">
-              {t("Stock levels")}
             </div>
             <div className="text-sm md:text-base font-semibold mt-2 flex gap-4">
               <span className="text-red-600">{t("Low")}: {lowCount}</span>
               <span className="text-green-600">{t("InStock")}: {inStockCount}</span>
             </div>
             <div className="mt-3 text-xs text-muted-foreground">
-              {t("Total items")}: {inventory.length}
+              Total items: {inventory.length}
+              {getText("stockLevels", "Stock levels")}
+            </div>
+            <div className="text-sm md:text-base font-semibold mt-2 flex gap-4">
+              <span className="text-red-600">{getText("lowLabel", "Low")}: {lowCount}</span>
+              <span className="text-green-600">{getText("inStockLabel", "In stock")}: {inStockCount}</span>
+            </div>
+            <div className="mt-3 text-xs text-muted-foreground">
+              {getText("totalItems", "Total items")}: {inventory.length}
+
             </div>
           </div>
 
           <div className="p-4 bg-card border border-border rounded-lg">
             <div className="text-xs md:text-sm text-muted-foreground">
-              {t("Profit")} ({t("This Month")})
+              {getText("profitThisMonth", "Profit (This Month)")}
+
             </div>
             <div className="text-xl md:text-2xl font-bold mt-2">
               {formatCurrency(monthlyProfit)}
             </div>
             <div className="mt-3 text-xs text-muted-foreground">
-              {t("Sales")} − {t("Expenses")}
+              {getText("salesMinusExpenses", "Sales − Expenses")}
+
             </div>
           </div>
         </div>
@@ -262,7 +311,8 @@ export default function ProductDashboard() {
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="p-4 md:p-6 bg-card border border-border rounded-lg">
             <h3 className="font-semibold text-sm md:text-base">
-              {t("Recent activity")}
+              {getText("recentActivity", UIText.dashboard.recentActivity)}
+
             </h3>
             <ul className="mt-4 space-y-3 text-xs md:text-sm text-muted-foreground">
               {allActivities.length > 0 ? (
@@ -281,7 +331,8 @@ export default function ProductDashboard() {
                       firstItem?.name ||
                       activity.itemName ||
                       activity.name ||
-                      t("Unknown item");
+                      getText("unknownItem", "Unknown item");
+
                     return (
                       <li
                         key={`${activity.type}-${activity.id || idx}`}
@@ -289,7 +340,8 @@ export default function ProductDashboard() {
                       >
                         <div className="flex-1">
                           <span className="inline-block px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded mr-2">
-                            {t("Sale")}
+                            {getText("saleTag", "Sale")}
+
                           </span>
                           {itemName} —{" "}
                           {formatCurrency(parseCurrencyValue(saleAmount))}
@@ -306,9 +358,10 @@ export default function ProductDashboard() {
                       >
                         <div className="flex-1">
                           <span className="inline-block px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded mr-2">
-                            {t("Expense")}
+                            {getText("expenseTag", "Expense")}
                           </span>
-                          {activity.description || t("Expense")} —{" "}
+                          {activity.description || getText("expenseFallback", "Expense")} —{" "}
+
                           {formatCurrency(parseCurrencyValue(expenseAmount))}
                         </div>
                       </li>
@@ -317,7 +370,8 @@ export default function ProductDashboard() {
                 })
               ) : (
                 <>
-                  <li>{t("No recent activity")}</li>
+                  <li>{getText("noRecentActivity", "No recent activity")}</li>
+
                 </>
               )}
             </ul>
@@ -325,7 +379,8 @@ export default function ProductDashboard() {
 
           <div className="p-4 md:p-6 bg-card border border-border rounded-lg">
             <h3 className="font-semibold text-sm md:text-base">
-              {t("Quick actions")}
+              {getText("quickActions", UIText.dashboard.quickActions)}
+
             </h3>
             <div className="mt-4 flex flex-col gap-2 md:gap-3">
               <Button
@@ -333,7 +388,8 @@ export default function ProductDashboard() {
                 onClick={() => navigate("/inventory")}
                 className="w-full text-xs md:text-sm"
               >
-                {t("Add New Product")}
+                {getText("addProduct", "Add New Product")}
+
               </Button>
               <Button
                 variant="outline"
@@ -341,7 +397,8 @@ export default function ProductDashboard() {
                 onClick={() => navigate("/expenses")}
                 className="w-full text-xs md:text-sm"
               >
-                {t("See Expenses")}
+                {getText("seeExpenses", "See Expenses")}
+
               </Button>
               <Button
                 variant="ghost"
@@ -349,7 +406,8 @@ export default function ProductDashboard() {
                 onClick={() => navigate("/sales")}
                 className="w-full text-xs md:text-sm"
               >
-                {t("Add New Sale")}
+                {getText("addSale", "Add New Sale")}
+
               </Button>
             </div>
           </div>

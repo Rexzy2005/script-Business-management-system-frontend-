@@ -4,14 +4,10 @@ import Footer from "@/components/Footer";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { isAuthenticated, getUser, signOut } from "@/lib/auth";
 import { toast } from "sonner";
-import { Globe } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { UIText } from "@/lib/uiText";
+import AutoTranslate from "@/components/AutoTranslate";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function Layout({ children, fullWidth = false }) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
@@ -19,7 +15,45 @@ export default function Layout({ children, fullWidth = false }) {
   const authed = isAuthenticated();
   const user = getUser();
   const location = useLocation();
-  const { language, changeLanguage, supportedLanguages, t } = useTranslation();
+  const navItems = React.useMemo(
+    () => [
+      { id: "dashboard", to: "/dashboard", defaultText: UIText.header.dashboard },
+      { id: "profile", to: "/profile", defaultText: UIText.common.profile },
+      { id: "analytics", to: "/analytics", defaultText: UIText.header.analytics },
+      { id: "inventory", to: "/inventory", defaultText: UIText.header.inventory },
+      { id: "sales", to: "/sales", defaultText: UIText.header.sales },
+      { id: "expenses", to: "/expenses", defaultText: UIText.header.expenses },
+      { id: "team", to: "/team", defaultText: UIText.header.team },
+      { id: "settings", to: "/settings", defaultText: UIText.common.settings },
+    ],
+    [],
+  );
+  const translationSource = React.useMemo(() => {
+    const base = {
+      businessToolkit: UIText.layout.businessToolkit,
+      openMenu: UIText.layout.openMenu,
+      closeMenu: UIText.layout.closeMenu,
+      signOut: UIText.auth.signOut,
+      signOutSuccess: UIText.auth.signOutSuccess,
+      signOutFailed: UIText.auth.signOutFailed,
+    };
+
+    navItems.forEach((item) => {
+      base[item.id] = item.defaultText;
+    });
+
+    return base;
+  }, [navItems]);
+  const { translatedText: layoutText } = useTranslation(translationSource);
+  const protectedLinks = React.useMemo(
+    () =>
+      navItems.map((item) => ({
+        to: item.to,
+        label: layoutText?.[item.id] ?? item.defaultText,
+      })),
+    [navItems, layoutText],
+  );
+
 
   React.useEffect(() => {
     if (sidebarOpen) {
@@ -35,25 +69,14 @@ export default function Layout({ children, fullWidth = false }) {
   const handleSignOut = async () => {
     try {
       await signOut();
-      toast.success("Signed out");
+      toast.success(layoutText?.signOutSuccess ?? UIText.auth.signOutSuccess);
     } catch (e) {
-      toast.error("Sign out failed");
+      toast.error(layoutText?.signOutFailed ?? UIText.auth.signOutFailed);
     } finally {
       setSidebarOpen(false);
       navigate("/", { replace: true });
     }
   };
-
-  const protectedLinks = [
-    { to: "/dashboard", labelKey: "Dashboard" },
-    { to: "/profile", labelKey: "Profile" },
-    { to: "/analytics", labelKey: "Analytics" },
-    { to: "/inventory", labelKey: "Inventory" },
-    { to: "/sales", labelKey: "Sales" },
-    { to: "/expenses", labelKey: "Expenses" },
-    { to: "/team", labelKey: "Team" },
-    { to: "/settings", labelKey: "Settings" },
-  ];
 
   return (
     <div className="h-screen bg-background text-foreground flex flex-col">
@@ -72,7 +95,7 @@ export default function Layout({ children, fullWidth = false }) {
               <div className="mb-6">
                 <img src="/logo g.svg" alt="Script logo" className="w-14 h-auto mb-3" />
                 <div className="text-xs md:text-sm text-muted-foreground">
-                  Business toolkit
+                  {layoutText?.businessToolkit ?? UIText.layout.businessToolkit}
                 </div>
               </div>
 
@@ -91,31 +114,25 @@ export default function Layout({ children, fullWidth = false }) {
               </nav>
 
               <div className="border-t border-border pt-4 mt-4">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="w-full flex items-center justify-between px-3 py-2 rounded-md text-xs md:text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors mb-2">
-                      <Globe size={16} />
-                      <span>{language.toUpperCase()}</span>
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {Object.entries(supportedLanguages).map(([code, name]) => (
-                      <DropdownMenuItem
-                        key={code}
-                        onClick={() => changeLanguage(code)}
-                        className={language === code ? "bg-accent" : ""}
-                      >
-                        {name}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
                 <button
                   onClick={handleSignOut}
                   className="w-full px-3 py-2 rounded-md text-xs md:text-sm text-destructive hover:bg-destructive/10 transition-colors text-left"
                 >
                   {t("Sign out")}
                 </button>
+
+                <div className="flex items-center justify-between gap-2">
+                  <button
+                    onClick={handleSignOut}
+                    className="px-3 py-2 rounded-md text-xs md:text-sm text-destructive hover:bg-destructive/10 transition-colors text-left flex-1"
+                  >
+                    {layoutText?.signOut ?? UIText.auth.signOut}
+                  </button>
+                  <div className="hidden md:block">
+                    <LanguageSwitcher />
+                  </div>
+                </div>
+ 8340a82 (language toggle)
               </div>
             </aside>
 
@@ -150,7 +167,7 @@ export default function Layout({ children, fullWidth = false }) {
                     <button
                       onClick={() => setSidebarOpen(false)}
                       className="p-2 rounded-md bg-card border border-border text-foreground hover:bg-accent"
-                      aria-label="Close menu"
+                      aria-label={layoutText?.closeMenu ?? UIText.layout.closeMenu}
                     >
                       <svg
                         width="20"
@@ -190,7 +207,8 @@ export default function Layout({ children, fullWidth = false }) {
                       onClick={handleSignOut}
                       className="w-full px-3 py-2 rounded-md text-sm text-destructive hover:bg-destructive/10 transition-colors text-left"
                     >
-                      {t("Sign out")}
+                      {layoutText?.signOut ?? UIText.auth.signOut}
+
                     </button>
                   </div>
                 </div>
@@ -200,23 +218,13 @@ export default function Layout({ children, fullWidth = false }) {
         )}
 
         <main className="flex-1 w-full overflow-y-auto flex flex-col">
-          {/*
-            Use a consistent responsive container across the app.
-            Best practice: cap content to a readable width (screen-xl ~1280px)
-            while providing sensible horizontal padding at different breakpoints.
-            Preserve `fullWidth` prop to allow pages that require edge-to-edge layouts.
-          */}
-          {(() => {
-            const containerClass = fullWidth
-              ? "max-w-full mx-0 px-0 md:py-8"
-              : "max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8";
+          <AutoTranslate
+            as="div"
+            className={`flex-1 ${fullWidth ? "px-0 md:py-8" : "px-4 py-6 md:py-8"} w-full ${fullWidth ? "max-w-full mx-0" : "max-w-7xl mx-auto"}`}
+          >
+            {children}
+          </AutoTranslate>
 
-            return (
-              <div className={`flex-1 w-full ${containerClass}`}>
-                {children}
-              </div>
-            );
-          })()}
           {location.pathname === "/" && <Footer />}
         </main>
       </div>

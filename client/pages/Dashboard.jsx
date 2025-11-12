@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { useEffect, useState } from "react";
 import Layout from "@/components/Layout";
 import ProductDashboard from "@/pages/ProductDashboard";
@@ -145,4 +146,11 @@ export default function Dashboard() {
       </div>
     </Layout>
   );
+=======
+import React from "react";
+import ProductDashboard from "@/pages/ProductDashboard";
+
+export default function Dashboard() {
+  return <ProductDashboard />;
+>>>>>>> 8340a82 (language toggle)
 }
