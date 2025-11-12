@@ -16,14 +16,15 @@ export default function Header({ onToggle }) {
     return () => window.removeEventListener("script-auth", onAuth);
   }, []);
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     try {
-      signOut();
+      await signOut();
       toast.success("Signed out");
     } catch (e) {
       toast.error("Sign out failed");
+    } finally {
+      navigate("/", { replace: true });
     }
-    navigate("/signin");
   };
 
   const isHomePage = location.pathname === "/";
@@ -32,26 +33,8 @@ export default function Header({ onToggle }) {
     <header className="w-full border-b border-border bg-background sticky top-0 z-40">
       <div className="container flex items-center justify-between py-3 px-4">
         <div className="flex items-center gap-3">
-          <Link to="/" className="flex items-center gap-2 md:gap-3">
-            <svg
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden
-            >
-              <rect width="24" height="24" rx="6" fill="hsl(var(--primary))" />
-              <path
-                d="M6 12h12v0"
-                stroke="hsl(var(--primary-foreground))"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                opacity="0.9"
-              />
-            </svg>
-            <span className="text-base md:text-lg font-semibold">Script</span>
+          <Link to="/" className="flex items-center gap-2 md:gap-3" aria-label="Script home">
+            <img src="/logo g.svg" alt="Script logo" className="h-8 w-auto" />
           </Link>
         </div>
 

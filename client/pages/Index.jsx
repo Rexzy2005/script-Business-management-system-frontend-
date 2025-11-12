@@ -29,18 +29,19 @@ export default function Index() {
       <section className="grid gap-8 md:gap-16 lg:grid-cols-2 items-center mb-16 md:mb-24">
         <div>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight">
-            Script — Smart inventory & invoicing for Nigerian SMEs
+            Script — Smart Business Management System for Nigerian SMEs
           </h1>
           <p className="mt-4 md:mt-6 text-base md:text-lg text-muted-foreground max-w-xl">
-            All-in-one platform to manage invoicing, inventory, cash flow,
-            customer relationships, and teams — built for product businesses in
+            All-in-one platform to manage sales, inventory, cash flow, and
+            customer relationships — built for businesses in
             Nigeria with local payments and practical workflows.
           </p>
 
           <div className="mt-6 md:mt-8 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <Link to="/signup" className="w-full sm:w-auto">
               <Button size="lg" className="w-full sm:w-auto">
-                Get started — ₦500/month
+                Get started — ₦200/month
+                Get started 
               </Button>
             </Link>
             <Link to="/features" className="w-full sm:w-auto">
@@ -51,43 +52,19 @@ export default function Index() {
           </div>
         </div>
 
-        <div className="relative mt-8 md:mt-0">
-          <div className="rounded-xl bg-gradient-to-br from-primary to-secondary p-1 shadow-lg">
-            <div className="bg-card p-4 md:p-6 rounded-lg">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <p className="text-xs font-semibold text-muted-foreground">
-                  LIVE DASHBOARD
-                </p>
-              </div>
-              <h3 className="text-lg md:text-xl font-semibold mb-4">
-                Your business metrics at a glance
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-background border border-border rounded p-3">
-                  <p className="text-xs text-muted-foreground">
-                    Monthly Revenue
-                  </p>
-                  <p className="text-lg font-bold text-primary mt-1">
-                    ₦245,000
-                  </p>
-                </div>
-                <div className="bg-background border border-border rounded p-3">
-                  <p className="text-xs text-muted-foreground">Customers</p>
-                  <p className="text-lg font-bold text-primary mt-1">38</p>
-                </div>
-                <div className="bg-background border border-border rounded p-3">
-                  <p className="text-xs text-muted-foreground">
-                    Inventory Value
-                  </p>
-                  <p className="text-lg font-bold text-primary mt-1">₦1.2M</p>
-                </div>
-                <div className="bg-background border border-border rounded p-3">
-                  <p className="text-xs text-muted-foreground">Invoices Sent</p>
-                  <p className="text-lg font-bold text-primary mt-1">156</p>
-                </div>
-              </div>
-            </div>
+        <div className="relative mt-8 md:mt-0 w-full">
+          <div className="rounded-xl overflow-visible aspect-[4/3] md:aspect-[16/10] lg:aspect-auto lg:h-[600px]">
+            <img
+              src="/Group 7.png"
+              alt="Script business management dashboard with Nigerian entrepreneurs"
+              className="w-full h-full object-contain"
+              style={{
+                filter: 'drop-shadow(0 10px 25px rgba(0, 0, 0, 0.15)) drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))'
+              }}
+              loading="eager"
+              fetchPriority="high"
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 40vw"
+            />
           </div>
         </div>
       </section>
@@ -101,11 +78,11 @@ export default function Index() {
           <div className="p-4 md:p-6 bg-card border border-border rounded-lg">
             <Zap className="w-6 h-6 text-primary mb-3" />
             <h4 className="font-semibold text-sm md:text-base">
-              Invoice Management
+              Sales Management
             </h4>
             <p className="text-xs md:text-sm text-muted-foreground mt-2">
-              Create professional invoices, send to customers, track payments,
-              and manage overdue reminders.
+              Create sales, track payments,
+              and manage stock levels reminders.
             </p>
           </div>
           <div className="p-4 md:p-6 bg-card border border-border rounded-lg">
@@ -251,13 +228,13 @@ export default function Index() {
             </div>
 
             <div className="flex items-baseline justify-center gap-2 mb-8">
-              <span className="text-5xl font-bold">₦500</span>
+              <span className="text-5xl font-bold">₦200</span>
               <span className="text-muted-foreground">/month</span>
             </div>
 
             <p className="text-center text-sm text-muted-foreground mb-8">
-              or <strong className="text-foreground">₦5,000/year</strong> and
-              save ₦500
+              or <strong className="text-foreground">₦2,000/year</strong> and
+              save ₦400
             </p>
 
             <Link to="/signup" className="block mb-8">

@@ -38,25 +38,22 @@ export async function flutterwaveCheckout({
           phone_number: customer.phone || undefined,
           name: customer.name || undefined,
         },
-        callback: async function (data) {
-          // data contains transaction_id and status
+        callback: function (data) {
+          // data contains transaction_id, tx_ref and status from Flutterwave
           try {
-            // Verify on server via Express endpoint
-            const body = { id: data.transaction_id, tx_ref: data.tx_ref };
-            const base = getApiBaseUrl();
-            const res = await fetch(`${base}${API_ENDPOINTS.PAYMENT_VERIFY}`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(body),
-            });
-            const verified = await res.json().catch(() => null);
-            if (verified && verified.status === "success") {
-              onSuccess && onSuccess(verified);
-              resolve(verified);
-            } else {
-              onClose && onClose(verified);
-              reject(new Error("Payment verification failed"));
-            }
+            // Flutterwave callback structure:
+            // data = {
+            //   tx_ref: "transaction reference",
+            //   transaction_id: "flw_txn_id",
+            //   status: "successful" | "failed"
+            // }
+            const callbackData = {
+              transaction_id: data.transaction_id || data.id,
+              tx_ref: data.tx_ref || tx_ref,
+              status: data.status || "successful",
+            };
+            onSuccess && onSuccess(callbackData);
+            resolve(callbackData);
           } catch (e) {
             reject(e);
           }

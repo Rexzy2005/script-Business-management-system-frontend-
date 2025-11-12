@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -23,6 +23,7 @@ import { signOut } from "@/lib/auth";
 const AdminLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const menuItems = [
     {
@@ -89,11 +90,10 @@ const AdminLayout = ({ children }) => {
     } catch (e) {
       console.error("Logout failed:", e);
     } finally {
-      // Use client-side navigation when possible to keep SPA behavior
       try {
-        window.location.href = "/signin";
-      } catch (e) {
-        // fallback: do nothing
+        navigate("/", { replace: true });
+      } catch (err) {
+        window.location.href = "/";
       }
     }
   };
@@ -109,11 +109,9 @@ const AdminLayout = ({ children }) => {
       >
         <div className="flex flex-col h-full">
           {/* Logo Area */}
-          <div className="p-6 border-b border-border">
-            <h1 className="text-xl font-bold text-primary flex items-center gap-2">
-              <Shield size={24} />
-              Super Admin
-            </h1>
+          <div className="p-6 border-b border-border flex items-center">
+            <img src="/logo g.svg" alt="Script logo" className="h-10 w-auto mr-3" />
+            <h1 className="text-xl font-bold text-primary">Super Admin</h1>
           </div>
 
           {/* Navigation */}

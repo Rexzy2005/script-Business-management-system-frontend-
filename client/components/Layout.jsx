@@ -23,15 +23,16 @@ export default function Layout({ children, fullWidth = false }) {
     };
   }, [sidebarOpen]);
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     try {
-      signOut();
+      await signOut();
       toast.success("Signed out");
     } catch (e) {
       toast.error("Sign out failed");
+    } finally {
+      setSidebarOpen(false);
+      navigate("/", { replace: true });
     }
-    setSidebarOpen(false);
-    navigate("/signin");
   };
 
   const protectedLinks = [
@@ -60,8 +61,7 @@ export default function Layout({ children, fullWidth = false }) {
           <>
             <aside className="hidden md:flex md:flex-col h-full w-56 lg:w-64 border-r border-border bg-sidebar p-4 overflow-hidden">
               <div className="mb-6">
-                <div className="w-10 h-10 rounded-md bg-primary mb-3" />
-                <div className="font-semibold text-sm md:text-base">Script</div>
+                <img src="/logo g.svg" alt="Script logo" className="w-14 h-auto mb-3" />
                 <div className="text-xs md:text-sm text-muted-foreground">
                   Business toolkit
                 </div>
@@ -100,8 +100,7 @@ export default function Layout({ children, fullWidth = false }) {
                 <div className="md:hidden fixed inset-0 z-50 bg-sidebar flex flex-col">
                   <div className="p-4 flex items-center justify-between border-b border-border">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-md bg-primary" />
-                      <span className="font-semibold text-sm">Script</span>
+                      <img src="/logo g.svg" alt="Script logo" className="w-10 h-auto" />
                     </div>
                     <button
                       onClick={() => setSidebarOpen(false)}

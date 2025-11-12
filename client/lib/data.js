@@ -33,31 +33,44 @@ function write(key, value) {
 }
 
 export async function getInventory() {
+  const user = getUser();
+  if (!user) {
+    // Return empty array immediately for unauthenticated users
+    return [];
+  }
+
   try {
     const products = await apiInventory.getAllProducts();
-    if (products && products.length > 0) {
-      inventoryCache = products.map((p) => {
-        const sku =
-          p.sku ||
-          p.productId ||
-          p.productId?.toString() ||
-          p._id ||
-          `P-${Date.now()}`;
-        const qty = p.qty ?? p.quantity ?? p.quantityInStock ?? 0;
-        const unitPrice =
-          p.retailPrice ?? p.unitPrice ?? p.pricePerPiece ?? p.bulkPrice ?? 0;
-        const value =
-          p.value || `₦${(Number(qty) * Number(unitPrice)).toLocaleString()}`;
-        return {
-          sku,
-          name: p.name || p.productName || "",
-          qty,
-          value,
-          _id: p._id || p.id,
-          ...p,
-        };
-      });
-      return inventoryCache;
+    // Handle both empty arrays and arrays with data
+    if (Array.isArray(products)) {
+      if (products.length > 0) {
+        inventoryCache = products.map((p) => {
+          const sku =
+            p.sku ||
+            p.productId ||
+            p.productId?.toString() ||
+            p._id ||
+            `P-${Date.now()}`;
+          const qty = p.qty ?? p.quantity ?? p.quantityInStock ?? 0;
+          const unitPrice =
+            p.retailPrice ?? p.unitPrice ?? p.pricePerPiece ?? p.bulkPrice ?? 0;
+          const value =
+            p.value || `₦${(Number(qty) * Number(unitPrice)).toLocaleString()}`;
+          return {
+            sku,
+            name: p.name || p.productName || "",
+            qty,
+            value,
+            _id: p._id || p.id,
+            ...p,
+          };
+        });
+        return inventoryCache;
+      } else {
+        // Empty array from API - new user with no inventory
+        inventoryCache = [];
+        return [];
+      }
     }
   } catch (error) {
     console.warn(
@@ -66,6 +79,7 @@ export async function getInventory() {
     );
   }
 
+  // Fallback to cached or empty array
   return inventoryCache || read(INVENTORY_KEY, []);
 }
 
@@ -152,48 +166,50 @@ export async function updateInventoryQty(sku, delta) {
 }
 
 export async function getSales() {
-  if (salesCache) return salesCache;
-
   const user = getUser();
-  if (user) {
-    try {
-      const resp = await apiSales.getAllSales();
-      // apiSales.getAllSales may return { items, pagination } or array
-      let items = [];
-      if (!resp) items = [];
-      else if (Array.isArray(resp)) items = resp;
-      else if (resp.items) items = resp.items;
-      else if (Array.isArray(resp.data)) items = resp.data;
-      else if (resp.data && Array.isArray(resp.data.items))
-        items = resp.data.items;
-      else items = resp.data?.items || [];
-
-      salesCache = items.map((s) => {
-        // Normalize sales: ensure 'amount' field is set from 'total' or 'subtotal'
-        const amount = s.amount || s.total || s.subtotal || 0;
-        return {
-          id: s._id || s.id,
-          amount: amount, // Ensure amount field exists for compatibility
-          ...s,
-        };
-      });
-      saveSales(salesCache);
-      return salesCache;
-    } catch (e) {
-      console.warn("Failed to fetch sales from API, falling back to local:", e);
-    }
+  if (!user) {
+    // Return empty array immediately for unauthenticated users
+    return [];
   }
 
-  const cached = read(SALES_KEY, []);
-  // Also normalize cached sales
-  return (Array.isArray(cached) ? cached : []).map((s) => {
-    const amount = s.amount || s.total || s.subtotal || 0;
-    return {
-      id: s._id || s.id,
-      amount: amount,
-      ...s,
-    };
-  });
+  if (salesCache) return salesCache;
+
+  try {
+    const resp = await apiSales.getAllSales();
+    // apiSales.getAllSales may return { items, pagination } or array
+    let items = [];
+    if (!resp) items = [];
+    else if (Array.isArray(resp)) items = resp;
+    else if (resp.items) items = resp.items;
+    else if (Array.isArray(resp.data)) items = resp.data;
+    else if (resp.data && Array.isArray(resp.data.items))
+      items = resp.data.items;
+    else items = resp.data?.items || [];
+
+    // Normalize sales: ensure 'amount' field is set from 'total' or 'subtotal'
+    salesCache = items.map((s) => {
+      const amount = s.amount || s.total || s.subtotal || 0;
+      return {
+        id: s._id || s.id,
+        amount: amount, // Ensure amount field exists for compatibility
+        ...s,
+      };
+    });
+    saveSales(salesCache);
+    return salesCache;
+  } catch (e) {
+    console.warn("Failed to fetch sales from API, falling back to local:", e);
+    const cached = read(SALES_KEY, []);
+    // Also normalize cached sales
+    return (Array.isArray(cached) ? cached : []).map((s) => {
+      const amount = s.amount || s.total || s.subtotal || 0;
+      return {
+        id: s._id || s.id,
+        amount: amount,
+        ...s,
+      };
+    });
+  }
 }
 
 export async function addSale(sale) {
@@ -538,8 +554,14 @@ export async function updateBooking(id, updates) {
 }
 
 export function getClients() {
+  const user = getUser();
+  if (!user) {
+    // Return empty array immediately for unauthenticated users
+    return [];
+  }
+  
   if (clientsCache) return clientsCache;
-  return read(CLIENTS_KEY, DEFAULT_CLIENTS);
+  return read(CLIENTS_KEY, []);
 }
 
 export function saveClients(clients) {
@@ -560,34 +582,37 @@ const EXPENSES_KEY = "script_expenses";
 
 export async function getExpenses() {
   const user = getUser();
-  if (user) {
-    try {
-      const resp = await apiExpenses.getExpensesFromApi();
-      let items = [];
-      if (!resp) items = [];
-      else if (Array.isArray(resp)) items = resp;
-      else if (resp.items) items = resp.items;
-      else if (Array.isArray(resp.data)) items = resp.data;
-      else items = resp.data?.items || [];
-
-      // Normalize IDs: ensure each expense has an 'id' property
-      return items.map((e) => ({
-        id: e.id || e._id || `e${Date.now()}`,
-        ...e,
-      }));
-    } catch (e) {
-      console.warn(
-        "Failed to fetch expenses from API, falling back to local:",
-        e,
-      );
-    }
+  if (!user) {
+    // Return empty array immediately for unauthenticated users
+    return [];
   }
-  const cached = read(EXPENSES_KEY, []);
-  // Also normalize cached expenses
-  return (Array.isArray(cached) ? cached : []).map((e) => ({
-    id: e.id || e._id || `e${Date.now()}`,
-    ...e,
-  }));
+
+  try {
+    const resp = await apiExpenses.getExpensesFromApi();
+    let items = [];
+    if (!resp) items = [];
+    else if (Array.isArray(resp)) items = resp;
+    else if (resp.items) items = resp.items;
+    else if (Array.isArray(resp.data)) items = resp.data;
+    else items = resp.data?.items || [];
+
+    // Normalize IDs: ensure each expense has an 'id' property
+    return items.map((e) => ({
+      id: e.id || e._id || `e${Date.now()}`,
+      ...e,
+    }));
+  } catch (e) {
+    console.warn(
+      "Failed to fetch expenses from API, falling back to local:",
+      e,
+    );
+    const cached = read(EXPENSES_KEY, []);
+    // Also normalize cached expenses
+    return (Array.isArray(cached) ? cached : []).map((e) => ({
+      id: e.id || e._id || `e${Date.now()}`,
+      ...e,
+    }));
+  }
 }
 
 export function saveExpenses(expenses) {

@@ -107,6 +107,18 @@ export function clearAuthToken() {
   localStorage.removeItem("script_auth_token");
 }
 
+// Request deduplication: track in-flight requests to prevent duplicates
+const pendingRequests = new Map();
+
+/**
+ * Generate a unique key for request deduplication
+ */
+function getRequestKey(endpoint, options = {}) {
+  const method = (options.method || "GET").toUpperCase();
+  const body = options.body ? JSON.stringify(options.body) : "";
+  return `${method}:${endpoint}:${body}`;
+}
+
 /**
  * Core API request function
  */
@@ -115,119 +127,156 @@ export async function apiCall(endpoint, options = {}) {
   const url = `${baseUrl}${endpoint}`;
   const maxRetries = options.maxRetries ?? 3;
   let retryCount = 0;
-
-  const makeRequest = async () => {
-    // Rate limiter checks
-    if (!globalRateLimiter.canMakeRequest()) {
-      const waitTime = await globalRateLimiter.waitUntilReady();
-      console.debug(`Rate limiter: waited ${waitTime}ms for ${endpoint}`);
+  
+  // Check for duplicate request (only for GET and POST requests)
+  const method = (options.method || "GET").toUpperCase();
+  const shouldDedupe = method === "GET" || method === "POST";
+  
+  if (shouldDedupe) {
+    const requestKey = getRequestKey(endpoint, options);
+    const pendingRequest = pendingRequests.get(requestKey);
+    
+    if (pendingRequest) {
+      // Reuse existing request
+      console.debug(`[api] Deduplicating request: ${method} ${endpoint}`);
+      return pendingRequest;
     }
+  }
 
-    if (!globalRateLimiter.checkPerMinuteLimit()) {
-      const status = globalRateLimiter.getStatus();
-      throw new Error(
-        `Rate limit exceeded: ${status.recentRequestCount}/${status.requestsPerMinute} requests in the last minute`,
-      );
-    }
-
-    // Headers
-    const headers = {
-      "Content-Type": "application/json",
-      ...options.headers,
-    };
-
-    let token = getAuthToken();
-    if (!token) {
-      token = extractTokenFromUserStorage();
-      if (token) {
-        // persist the found token for future calls
-        try {
-          localStorage.setItem("script_auth_token", token);
-        } catch (e) {
-          /* ignore */
-        }
-      }
-    }
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-
-    // Extra debug log for token (masked) to help diagnose 401s. Always print in dev mode.
+  // Create the request promise
+  const requestPromise = (async () => {
     try {
-      const isDev =
-        typeof import.meta !== "undefined" &&
-        import.meta.env &&
-        import.meta.env.MODE === "development";
-      if (isDev) {
-        const preview = token
-          ? `${String(token).slice(0, 6)}...${String(token).slice(-6)}`
-          : "null";
-        console.debug(
-          `[api] ${options.method || "GET"} ${endpoint} - Authorization: ${token ? "Bearer " + preview : "none"}`,
-        );
-      }
-    } catch (e) {
-      // ignore logging errors
-    }
-    // Debug token in dev
-    if (import.meta.env && import.meta.env.MODE === "development") {
-      console.debug(
-        `[api] ${options.method || "GET"} ${endpoint} - hasToken: ${!!token} tokenPreview: ${token ? `${token.slice(0, 6)}...${token.slice(-6)}` : "null"}`,
-      );
-    }
+      const makeRequest = async () => {
+        // Rate limiter checks - DISABLED
+        // if (!globalRateLimiter.canMakeRequest()) {
+        //   const waitTime = await globalRateLimiter.waitUntilReady();
+        //   console.debug(`Rate limiter: waited ${waitTime}ms for ${endpoint}`);
+        // }
 
-    const response = await fetch(url, { ...options, headers });
-    const contentType = response.headers.get("content-type") || "";
+        // if (!globalRateLimiter.checkPerMinuteLimit()) {
+        //   const status = globalRateLimiter.getStatus();
+        //   throw new Error(
+        //     `Rate limit exceeded: ${status.recentRequestCount}/${status.requestsPerMinute} requests in the last minute`,
+        //   );
+        // }
 
-    // Handle 429 Rate limit
-    if (response.status === 429) {
-      globalRateLimiter.handleRateLimitError();
-      if (retryCount < maxRetries) {
-        retryCount++;
-        const backoffTime = globalRateLimiter.currentBackoffMs;
-        console.warn(
-          `429 on ${endpoint}. Retrying in ${backoffTime}ms (attempt ${retryCount}/${maxRetries})`,
-        );
-        await new Promise((resolve) => setTimeout(resolve, backoffTime));
-        return makeRequest();
-      }
-      let errorBody = contentType.includes("application/json")
-        ? await response.json().catch(() => null)
-        : await response.text().catch(() => null);
-      throw new Error(
-        errorBody?.message || "Too many requests, please try again later",
-      );
-    }
+        // Headers
+        const headers = {
+          "Content-Type": "application/json",
+          ...options.headers,
+        };
 
-    if (!response.ok) {
-      globalRateLimiter.resetBackoff();
-      let errorBody = contentType.includes("application/json")
-        ? await response.json().catch(() => null)
-        : await response.text().catch(() => null);
-      throw new Error(
-        errorBody?.message ||
-          response.statusText ||
-          `API Error: ${response.status}`,
-      );
-    }
+        let token = getAuthToken();
+        if (!token) {
+          token = extractTokenFromUserStorage();
+          if (token) {
+            // persist the found token for future calls
+            try {
+              localStorage.setItem("script_auth_token", token);
+            } catch (e) {
+              /* ignore */
+            }
+          }
+        }
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
 
-    // Success
-    globalRateLimiter.resetBackoff();
-    globalRateLimiter.recordRequest();
+        // Extra debug log for token (masked) to help diagnose 401s. Always print in dev mode.
+        try {
+          const isDev =
+            typeof import.meta !== "undefined" &&
+            import.meta.env &&
+            import.meta.env.MODE === "development";
+          if (isDev) {
+            const preview = token
+              ? `${String(token).slice(0, 6)}...${String(token).slice(-6)}`
+              : "null";
+            console.debug(
+              `[api] ${options.method || "GET"} ${endpoint} - Authorization: ${token ? "Bearer " + preview : "none"}`,
+            );
+          }
+        } catch (e) {
+          // ignore logging errors
+        }
+        // Debug token in dev
+        if (import.meta.env && import.meta.env.MODE === "development") {
+          console.debug(
+            `[api] ${options.method || "GET"} ${endpoint} - hasToken: ${!!token} tokenPreview: ${token ? `${token.slice(0, 6)}...${token.slice(-6)}` : "null"}`,
+          );
+        }
 
-    if (contentType.includes("application/json")) {
-      try {
-        return await response.json();
-      } catch (e) {
-        console.warn("Failed to parse JSON response:", e);
+        const response = await fetch(url, { ...options, headers });
+        const contentType = response.headers.get("content-type") || "";
+
+        // Handle 429 Rate limit - DISABLED (no rate limiting)
+        if (response.status === 429) {
+          // globalRateLimiter.handleRateLimitError(); // DISABLED
+          // For 429 errors, only retry once (not 3 times) to avoid making things worse
+          const maxRetriesFor429 = 1;
+          if (retryCount < maxRetriesFor429) {
+            retryCount++;
+            const backoffTime = 2000; // Fixed 2 second backoff instead of using rate limiter
+            console.warn(
+              `429 on ${endpoint}. Retrying in ${backoffTime}ms (attempt ${retryCount}/${maxRetriesFor429})`,
+            );
+            await new Promise((resolve) => setTimeout(resolve, backoffTime));
+            return makeRequest();
+          }
+          // Don't retry further - just throw the error
+          let errorBody = contentType.includes("application/json")
+            ? await response.json().catch(() => null)
+            : await response.text().catch(() => null);
+          throw new Error(
+            errorBody?.message || "Too many requests, please try again later",
+          );
+        }
+
+        if (!response.ok) {
+          // globalRateLimiter.resetBackoff(); // DISABLED
+          let errorBody = contentType.includes("application/json")
+            ? await response.json().catch(() => null)
+            : await response.text().catch(() => null);
+          throw new Error(
+            errorBody?.message ||
+              response.statusText ||
+              `API Error: ${response.status}`,
+          );
+        }
+
+        // Success - DISABLED rate limiter tracking
+        // globalRateLimiter.resetBackoff();
+        // globalRateLimiter.recordRequest();
+
+        if (contentType.includes("application/json")) {
+          try {
+            return await response.json();
+          } catch (e) {
+            console.warn("Failed to parse JSON response:", e);
+            return {};
+          }
+        }
+
         return {};
+      };
+
+      return await makeRequest();
+    } finally {
+      // Remove from pending requests when done (success or error)
+      if (shouldDedupe) {
+        const requestKey = getRequestKey(endpoint, options);
+        pendingRequests.delete(requestKey);
       }
     }
+  })();
 
-    return {};
-  };
+  // Store the promise for deduplication
+  if (shouldDedupe) {
+    const requestKey = getRequestKey(endpoint, options);
+    pendingRequests.set(requestKey, requestPromise);
+  }
 
-  return makeRequest();
+  return requestPromise;
 }
 
 /**
