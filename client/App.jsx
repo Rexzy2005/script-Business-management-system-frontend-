@@ -6,10 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { RateLimitWarning } from "@/components/RateLimitWarning";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
-
 import { LanguageProvider } from "@/lib/LanguageContext";
-
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Features from "./pages/Features";
