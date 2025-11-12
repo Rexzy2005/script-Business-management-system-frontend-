@@ -16,6 +16,7 @@ import {
   setCurrentUser,
   isAuthenticated,
 } from "@/lib/auth";
+import { useTranslation } from "@/hooks/useTranslation";
 import { toast } from "sonner";
 
 export default function SignIn() {
@@ -27,6 +28,7 @@ export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -69,7 +71,7 @@ export default function SignIn() {
       }
 
       // show success toast
-      toast.success("Signed in successfully");
+      toast.success(t("Signed in successfully"));
 
       const u = getUser();
 
@@ -90,7 +92,7 @@ export default function SignIn() {
         }
       }, 500);
     } catch (error) {
-      toast.error(error.message || "Login failed");
+      toast.error(error.message || t("Login failed"));
     } finally {
       setIsLoading(false);
     }
@@ -104,7 +106,7 @@ export default function SignIn() {
     setForgotOpen(false);
     setForgotEmail("");
     // show confirmation toast
-    toast.success("Password reset link sent");
+    toast.success(t("Password reset link sent"));
   };
   return (
     <Layout>
@@ -117,14 +119,14 @@ export default function SignIn() {
           <div className="flex items-center justify-center p-6 md:p-8">
             <div className="bg-card border border-border md:rounded-r-lg p-6 md:p-8 w-full max-w-lg">
               <img src="/logo g.svg" alt="Logo" className="h-8 mb-6" />
-              <h2 className="text-2xl font-semibold">Sign in to Script</h2>
+              <h2 className="text-2xl font-semibold">{t("Sign in")} to Script</h2>
               <p className="text-xs md:text-sm text-muted-foreground mt-2">
-                Enter your credentials to access your dashboard.
+                {t("Enter your credentials to access your dashboard")}.
               </p>
 
               <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <label className="block">
-                <div className="text-xs md:text-sm font-medium mb-2">Email</div>
+                <div className="text-xs md:text-sm font-medium mb-2">{t("Email")}</div>
                 <input
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -138,7 +140,7 @@ export default function SignIn() {
               </label>
 
               <label className="block">
-                <div className="text-xs md:text-sm font-medium mb-2">Password</div>
+                <div className="text-xs md:text-sm font-medium mb-2">{t("Password")}</div>
                 <div className="relative">
                   <input
                     value={password}
@@ -157,7 +159,7 @@ export default function SignIn() {
                     aria-pressed={showPassword}
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? "Hide" : "Show"}
+                    {showPassword ? t("Hide") : t("Show")}
                   </button>
                 </div>
               </label>
@@ -168,7 +170,7 @@ export default function SignIn() {
                   onClick={() => setForgotOpen(true)}
                   className="text-xs md:text-sm text-primary underline hover:no-underline"
                 >
-                  Forgot password?
+                  {t("Forgot password?")}
                 </button>
                 <Button
                   type="submit"
@@ -176,18 +178,18 @@ export default function SignIn() {
                   className="w-full sm:w-auto"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Signing in..." : "Sign in"}
+                  {isLoading ? t("Signing in") + "..." : t("Sign in")}
                 </Button>
               </div>
             </form>
 
                 <div className="mt-6 text-xs md:text-sm text-muted-foreground">
-                  Don't have an account?{" "}
+                  {t("Don't have an account?")} {" "}
                   <Link
                     to="/signup"
                     className="text-primary underline hover:no-underline"
                   >
-                    Create one
+                    {t("Create account")}
                   </Link>
                 </div>
             </div>
@@ -198,16 +200,15 @@ export default function SignIn() {
       <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reset your password</DialogTitle>
+            <DialogTitle>{t("Change Password")}</DialogTitle>
             <DialogDescription>
-              Enter your email address and we'll send you a link to reset your
-              password.
+              {t("Enter your email address and we'll send you a link to reset your password")}.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleForgotPassword} className="space-y-4">
             <label className="block">
               <div className="text-xs md:text-sm font-medium mb-2">
-                Email address
+                {t("Email address")}
               </div>
               <input
                 value={forgotEmail}
@@ -225,10 +226,10 @@ export default function SignIn() {
                 size="sm"
                 onClick={() => setForgotOpen(false)}
               >
-                Cancel
+                {t("Cancel")}
               </Button>
               <Button type="submit" size="sm">
-                Send reset link
+                {t("Send reset link")}
               </Button>
             </div>
           </form>

@@ -10,9 +10,11 @@ import {
 import { useNavigate } from "react-router-dom";
 import { X, Edit2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Services() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [services, setServices] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);

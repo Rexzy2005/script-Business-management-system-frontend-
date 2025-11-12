@@ -3,7 +3,13 @@
  * Manages global language state and provides translation functionality to all components
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import {
   getPreferredLanguage,
   setPreferredLanguage,
@@ -30,36 +36,34 @@ export const LanguageProvider = ({ children }) => {
   }, []);
 
   // Handle language change
-  const changeLanguage = useCallback(async (languageCode) => {
-    if (languageCode === currentLanguage) {
-      return; // No need to change
-    }
+  const changeLanguage = useCallback(
+    async (languageCode) => {
+      if (languageCode === currentLanguage) return;
 
-    setIsLoading(true);
-    try {
-      // Persist the language preference
-      setPreferredLanguage(languageCode);
-      setCurrentLanguage(languageCode);
+      setIsLoading(true);
+      try {
+        setPreferredLanguage(languageCode);
+        setCurrentLanguage(languageCode);
 
-      // Dispatch custom event so other components can react to language change
-      window.dispatchEvent(
-        new CustomEvent("languageChanged", {
-          detail: { language: languageCode },
-        })
-      );
-    } catch (error) {
-      console.error("Failed to change language:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentLanguage]);
+        // Notify other components
+        window.dispatchEvent(
+          new CustomEvent("languageChanged", {
+            detail: { language: languageCode },
+          })
+        );
+      } catch (error) {
+        console.error("Failed to change language:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [currentLanguage]
+  );
 
-  // Translate function that components can use
+  // Translate function
   const translate = useCallback(
     async (text) => {
-      if (!text || typeof text !== "string") {
-        return text;
-      }
+      if (!text || typeof text !== "string") return text;
       return translateText(text, currentLanguage);
     },
     [currentLanguage]
@@ -73,11 +77,16 @@ export const LanguageProvider = ({ children }) => {
     supportedLanguages,
   };
 
-  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
+  // Return without JSX
+  return React.createElement(
+    LanguageContext.Provider,
+    { value },
+    children
+  );
 };
 
 /**
- * Hook to use language context in any component
+ * Hook to use language context
  */
 export const useLanguage = () => {
   const context = useContext(LanguageContext);

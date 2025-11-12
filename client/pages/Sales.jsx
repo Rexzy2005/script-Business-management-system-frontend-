@@ -7,11 +7,13 @@ import {
   updateInventoryQty,
 } from "@/lib/data";
 import { getUser } from "@/lib/auth";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { emit, on } from "@/lib/eventBus";
 
 export default function Sales() {
+  const { t } = useTranslation();
   const [sales, setSales] = useState([]);
   const [items, setItems] = useState([]);
   const [showSaleForm, setShowSaleForm] = useState(false);
@@ -70,10 +72,10 @@ export default function Sales() {
   const submitSaleForm = async (e) => {
     e.preventDefault();
     const item = items.find((i) => i.sku === form.sku);
-    if (!item) return toast.error("Item not found");
+    if (!item) return toast.error(t("Item not found"));
     if (!form.qty || form.qty <= 0)
-      return toast.error("Enter a valid quantity");
-    if (form.qty > item.qty) return toast.error("Not enough stock");
+      return toast.error(t("Enter a valid quantity"));
+    if (form.qty > item.qty) return toast.error(t("Not enough stock"));
 
     const user = getUser();
     const record = await addSale({
@@ -90,7 +92,7 @@ export default function Sales() {
     setSales(updatedSales);
     setItems(updatedItems);
     setShowSaleForm(false);
-    toast.success(`Sale recorded: ${record.id}`);
+    toast.success(t("Sale recorded") + `: ${record.id}`);
     // Emit event so other pages (Dashboard, Inventory, Analytics) refresh their data
     emit("sale-added", record);
   };
@@ -117,10 +119,9 @@ export default function Sales() {
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold">Sales</h1>
+            <h1 className="text-2xl md:text-3xl font-extrabold">{t("Sales")}</h1>
             <p className="mt-1 text-xs md:text-sm text-muted-foreground">
-              Record and review sales. Creating a sale will update inventory
-              counts.
+              {t("Record and review sales. Creating a sale will update inventory counts")}.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 md:gap-3 w-full md:w-auto">
@@ -129,18 +130,18 @@ export default function Sales() {
               onClick={openSaleForm}
               className="w-full md:w-auto text-xs md:text-sm"
             >
-              New sale
+              {t("New sale")}
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => {
                 navigator.clipboard?.writeText(JSON.stringify(sales));
-                toast.success("Sales copied (JSON)");
+                toast.success(t("Sales copied (JSON)"));
               }}
               className="w-full md:w-auto text-xs md:text-sm"
             >
-              Export
+              {t("Export")}
             </Button>
           </div>
         </div>
@@ -150,10 +151,10 @@ export default function Sales() {
             <thead>
               <tr className="text-muted-foreground text-left border-b border-border">
                 <th className="px-3 md:px-4 py-3">ID</th>
-                <th className="px-3 md:px-4 py-3">Item</th>
-                <th className="px-3 md:px-4 py-3">Qty</th>
-                <th className="px-3 md:px-4 py-3">Amount</th>
-                <th className="px-3 md:px-4 py-3">Date</th>
+                <th className="px-3 md:px-4 py-3">{t("Item")}</th>
+                <th className="px-3 md:px-4 py-3">{t("Qty")}</th>
+                <th className="px-3 md:px-4 py-3">{t("Amount")}</th>
+                <th className="px-3 md:px-4 py-3">{t("Date")}</th>
               </tr>
             </thead>
             <tbody>
@@ -200,10 +201,10 @@ export default function Sales() {
             onSubmit={submitSaleForm}
             className="bg-card border border-border rounded-lg p-6 w-full max-w-md"
           >
-            <h3 className="text-lg font-semibold">Record sale</h3>
+            <h3 className="text-lg font-semibold">{t("Record sale")}</h3>
 
             <label className="block mt-3">
-              <div className="text-xs md:text-sm font-medium mb-2">Item</div>
+              <div className="text-xs md:text-sm font-medium mb-2">{t("Item")}</div>
               <select
                 value={form.sku}
                 onChange={(e) =>
@@ -213,7 +214,7 @@ export default function Sales() {
               >
                 {items.map((i) => (
                   <option key={i.sku} value={i.sku}>
-                    {i.sku} — {i.name} (Available: {i.qty})
+                    {i.sku} — {i.name} ({t("Available")}: {i.qty})
                   </option>
                 ))}
               </select>
@@ -221,7 +222,7 @@ export default function Sales() {
 
             <label className="block mt-3">
               <div className="text-xs md:text-sm font-medium mb-2">
-                Quantity
+                {t("Quantity")}
               </div>
               <input
                 type="number"
@@ -236,7 +237,7 @@ export default function Sales() {
 
             <label className="block mt-3">
               <div className="text-xs md:text-sm font-medium mb-2">
-                Amount (NGN)
+                {t("Amount")} (NGN)
               </div>
               <input
                 type="number"
@@ -251,7 +252,7 @@ export default function Sales() {
 
             <label className="block mt-3">
               <div className="text-xs md:text-sm font-medium mb-2">
-                Customer (optional)
+                {t("Customer")} (optional)
               </div>
               <input
                 value={form.customer}
@@ -269,10 +270,10 @@ export default function Sales() {
                 size="sm"
                 onClick={() => setShowSaleForm(false)}
               >
-                Cancel
+                {t("Cancel")}
               </Button>
               <Button type="submit" size="sm">
-                Record sale
+                {t("Record sale")}
               </Button>
             </div>
           </form>

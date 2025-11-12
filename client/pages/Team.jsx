@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Team() {
+  const { t } = useTranslation();
   const [members, setMembers] = useState([]);
 
   useEffect(() => {

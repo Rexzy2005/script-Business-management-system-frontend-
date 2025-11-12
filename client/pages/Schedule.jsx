@@ -12,9 +12,11 @@ import { X } from "lucide-react";
 import { toast } from "sonner";
 import BookingFilters from "@/components/bookings/BookingFilters";
 import BookingTable from "@/components/bookings/BookingTable";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Schedule() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [bookings, setBookings] = useState([]);
   const [services, setServices] = useState([]);
   const [selectedBooking, setSelectedBooking] = useState(null);
