@@ -6,6 +6,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { RateLimitWarning } from "@/components/RateLimitWarning";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+
+import { LanguageProvider } from "@/lib/LanguageContext";
+
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Features from "./pages/Features";
@@ -39,11 +43,20 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <RateLimitWarning />
       <BrowserRouter>
+
+    <LanguageProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <RateLimitWarning />
+        <BrowserRouter>
+
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/features" element={<Features />} />
@@ -192,7 +205,12 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+
     </TooltipProvider>
+
+        </TooltipProvider>
+    </LanguageProvider>
+
   </QueryClientProvider>
 );
 

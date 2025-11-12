@@ -3,19 +3,23 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { getUser, fetchCurrentUser, signOut } from "@/lib/auth";
 import { updateCurrentUser } from "@/lib/apiAuth";
+import { useLanguage } from "@/lib/LanguageContext";
 import { useNavigate } from "react-router-dom";
-import { Save, X } from "lucide-react";
+import { Save } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "@/hooks/useTranslation";
+import { UIText } from "@/lib/uiText";
+
 
 export default function Settings() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const user = getUser();
+  const { currentLanguage, changeLanguage, supportedLanguages } = useLanguage();
   const [formData, setFormData] = useState({
     timezone: user?.settings?.timezone || "Africa/Lagos",
     currency: user?.settings?.currency || "NGN",
-    language: user?.settings?.language || "en",
+    language: user?.settings?.language || currentLanguage || "en",
     dateFormat: user?.settings?.dateFormat || "DD/MM/YYYY",
     notifications: true,
     emailNotifications: user?.settings?.notifications?.email ?? true,
@@ -25,6 +29,51 @@ export default function Settings() {
   });
 
   const [initialData, setInitialData] = useState(formData);
+  const translationSource = React.useMemo(
+    () => ({
+      title: UIText.settings.title,
+      subtitle: UIText.settings.subtitle,
+      backToDashboard: UIText.header.backToDashboard,
+      settingsPreferences: UIText.settings.settingsPreferences,
+      currency: UIText.settings.currency,
+      timezone: UIText.settings.timezone,
+      dateFormat: UIText.settings.dateFormat,
+      language: UIText.settings.languagePreference,
+      selectLanguage: UIText.settings.selectLanguage,
+      notifications: UIText.settings.notificationSettings,
+      emailLabel: UIText.common.email,
+      smsLabel: UIText.common.sms,
+      lowStockLabel: UIText.inventory.lowStock,
+      invoiceDueLabel: UIText.settings.invoiceDueLabel,
+      toggleNotifications: UIText.settings.enableNotifications,
+      notificationsCardTitle: UIText.settings.notificationSettings,
+      pushNotifications: UIText.settings.pushNotifications,
+      pushNotificationsDescription: UIText.settings.pushNotificationsDescription,
+      emailNotifications: UIText.settings.emailNotifications,
+      emailNotificationsDescription: UIText.settings.emailNotificationsDescription,
+      accountSection: UIText.settings.accountSection,
+      accountDescription: UIText.settings.accountDescription,
+      signOut: UIText.auth.signOut,
+      signOutSuccess: UIText.auth.signOutSuccess,
+      signOutFailed: UIText.auth.signOutFailed,
+      reset: UIText.buttons.reset,
+      saveChanges: UIText.settings.saveChanges,
+      settingsUpdated: UIText.settings.settingsUpdated,
+      failedToUpdate: UIText.settings.failedToUpdate,
+      resetMessage: UIText.settings.resetMessage,
+      dangerZone: UIText.settings.dangerZone,
+      dangerZoneDescription: UIText.settings.dangerZoneDescription,
+      deleteAccount: UIText.settings.deleteAccount,
+      deleteAccountConfirm: UIText.settings.deleteAccountConfirm,
+      deleteAccountSuccess: UIText.settings.deleteAccountSuccess,
+    }),
+    [],
+  );
+  const { translatedText: settingsText } = useTranslation(translationSource);
+  const getText = React.useCallback(
+    (key, fallback) => (settingsText && settingsText[key] ? settingsText[key] : fallback),
+    [settingsText],
+  );
 
   useEffect(() => {
     setInitialData(formData);
@@ -36,6 +85,11 @@ export default function Settings() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+
+    // If language changed, update it immediately in the app
+    if (name === "language" && value !== currentLanguage) {
+      changeLanguage(value);
+    }
   };
 
   const handleSave = async (e) => {
@@ -56,15 +110,15 @@ export default function Settings() {
         },
       });
       await fetchCurrentUser();
-      toast.success("Settings updated successfully");
+      toast.success(getText("settingsUpdated", UIText.settings.settingsUpdated));
     } catch (err) {
-      toast.error(err?.message || "Failed to update settings");
+      toast.error(err?.message || getText("failedToUpdate", UIText.settings.failedToUpdate));
     }
   };
 
   const handleReset = () => {
     setFormData(initialData);
-    toast.info("Settings reset to last saved");
+    toast.info(getText("resetMessage", UIText.settings.resetMessage));
   };
 
   return (
@@ -72,9 +126,9 @@ export default function Settings() {
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold">Settings</h1>
+            <h1 className="text-2xl md:text-3xl font-extrabold">{getText("title", UIText.settings.title)}</h1>
             <p className="mt-1 text-xs md:text-sm text-muted-foreground">
-              Manage your business configuration and preferences.
+              {getText("subtitle", UIText.settings.subtitle)}
             </p>
           </div>
           <Button
@@ -83,19 +137,19 @@ export default function Settings() {
             onClick={() => navigate("/dashboard")}
             className="w-full md:w-auto text-xs md:text-sm"
           >
-            Back to dashboard
+            {getText("backToDashboard", UIText.header.backToDashboard)}
           </Button>
         </div>
 
         <form onSubmit={handleSave} className="space-y-6">
           {/* Settings & Preferences */}
           <div className="bg-card border border-border rounded-lg p-6">
-            <h3 className="font-semibold text-lg mb-4">Settings & Preferences</h3>
+            <h3 className="font-semibold text-lg mb-4">{getText("settingsPreferences", UIText.settings.settingsPreferences)}</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <label>
                 <div className="text-xs md:text-sm font-medium mb-2">
-                  Currency
+                  {getText("currency", UIText.settings.currency)}
                 </div>
                 <select
                   name="currency"
@@ -112,7 +166,7 @@ export default function Settings() {
 
               <label>
                 <div className="text-xs md:text-sm font-medium mb-2">
-                  Timezone
+                  {getText("timezone", UIText.settings.timezone)}
                 </div>
                 <select
                   name="timezone"
@@ -129,7 +183,7 @@ export default function Settings() {
 
               <label>
                 <div className="text-xs md:text-sm font-medium mb-2">
-                  Date Format
+                  {getText("dateFormat", UIText.settings.dateFormat)}
                 </div>
                 <select
                   name="dateFormat"
@@ -145,7 +199,7 @@ export default function Settings() {
 
               <label>
                 <div className="text-xs md:text-sm font-medium mb-2">
-                  Language
+                  {getText("language", UIText.settings.languagePreference)}
                 </div>
                 <select
                   name="language"
@@ -155,15 +209,13 @@ export default function Settings() {
                 >
                   <option value="en">English</option>
                   <option value="ha">Hausa</option>
-                  <option value="ig">Igbo</option>
-                  <option value="yo">Yoruba</option>
                 </select>
               </label>
 
               {/* Notifications */}
               <div className="md:col-span-2">
                 <div className="text-xs md:text-sm font-medium mb-3">
-                  Notifications
+                  {getText("notifications", UIText.settings.notificationSettings)}
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -174,7 +226,7 @@ export default function Settings() {
                       onChange={handleChange}
                       className="w-4 h-4 rounded border-border"
                     />
-                    <span className="text-sm">Email</span>
+                    <span className="text-sm">{getText("emailLabel", UIText.common.email)}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -184,7 +236,7 @@ export default function Settings() {
                       onChange={handleChange}
                       className="w-4 h-4 rounded border-border"
                     />
-                    <span className="text-sm">SMS</span>
+                    <span className="text-sm">{getText("smsLabel", UIText.common.sms)}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -194,7 +246,7 @@ export default function Settings() {
                       onChange={handleChange}
                       className="w-4 h-4 rounded border-border"
                     />
-                    <span className="text-sm">Low Stock</span>
+                    <span className="text-sm">{getText("lowStockLabel", UIText.inventory.lowStock)}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -204,7 +256,7 @@ export default function Settings() {
                       onChange={handleChange}
                       className="w-4 h-4 rounded border-border"
                     />
-                    <span className="text-sm">Invoice Due</span>
+                    <span className="text-sm">{getText("invoiceDueLabel", UIText.settings.invoiceDueLabel)}</span>
                   </label>
                 </div>
               </div>
@@ -213,7 +265,7 @@ export default function Settings() {
 
           {/* Notifications */}
           <div className="bg-card border border-border rounded-lg p-6">
-            <h3 className="font-semibold text-lg mb-4">Notifications</h3>
+            <h3 className="font-semibold text-lg mb-4">{getText("notificationsCardTitle", UIText.settings.notificationSettings)}</h3>
 
             <div className="space-y-4">
               <label className="flex items-center gap-3 cursor-pointer">
@@ -225,9 +277,9 @@ export default function Settings() {
                   className="w-4 h-4 rounded border-border"
                 />
                 <div>
-                  <div className="text-sm font-medium">Push notifications</div>
+                  <div className="text-sm font-medium">{getText("pushNotifications", UIText.settings.pushNotifications)}</div>
                   <div className="text-xs text-muted-foreground">
-                    Get notified of new bookings and messages
+                    {getText("pushNotificationsDescription", UIText.settings.pushNotificationsDescription)}
                   </div>
                 </div>
               </label>
@@ -241,9 +293,9 @@ export default function Settings() {
                   className="w-4 h-4 rounded border-border"
                 />
                 <div>
-                  <div className="text-sm font-medium">Email notifications</div>
+                  <div className="text-sm font-medium">{getText("emailNotifications", UIText.settings.emailNotifications)}</div>
                   <div className="text-xs text-muted-foreground">
-                    Receive email updates and daily summary
+                    {getText("emailNotificationsDescription", UIText.settings.emailNotificationsDescription)}
                   </div>
                 </div>
               </label>
@@ -252,9 +304,9 @@ export default function Settings() {
 
           {/* Account Settings */}
           <div className="bg-card border border-border rounded-lg p-6">
-            <h3 className="font-semibold text-lg mb-4">Account</h3>
+            <h3 className="font-semibold text-lg mb-4">{getText("accountSection", UIText.settings.accountSection)}</h3>
             <p className="text-xs md:text-sm text-muted-foreground mb-4">
-              Manage your account and session.
+              {getText("accountDescription", UIText.settings.accountDescription)}
             </p>
             <Button
               type="button"
@@ -263,15 +315,15 @@ export default function Settings() {
               onClick={async () => {
                 try {
                   await signOut();
-                  toast.success("Signed out");
+                  toast.success(getText("signOutSuccess", UIText.auth.signOutSuccess));
                 } catch (e) {
-                  toast.error("Sign out failed");
+                  toast.error(getText("signOutFailed", UIText.auth.signOutFailed));
                 }
                 navigate("/", { replace: true });
               }}
               className="text-xs md:text-sm"
             >
-              Sign out
+              {getText("signOut", UIText.auth.signOut)}
             </Button>
           </div>
 
@@ -283,11 +335,11 @@ export default function Settings() {
               onClick={handleReset}
               className="text-xs md:text-sm"
             >
-              Reset
+              {getText("reset", UIText.buttons.reset)}
             </Button>
             <Button type="submit" className="text-xs md:text-sm">
               <Save className="w-3 h-3 mr-2" />
-              Save changes
+              {getText("saveChanges", UIText.settings.saveChanges)}
             </Button>
           </div>
         </form>
@@ -295,29 +347,29 @@ export default function Settings() {
         {/* Danger Zone */}
         <div className="mt-8 bg-red-50 border border-red-200 rounded-lg p-6">
           <h3 className="font-semibold text-lg text-red-900 mb-2">
-            Danger zone
+            {getText("dangerZone", UIText.settings.dangerZone)}
           </h3>
           <p className="text-sm text-red-700 mb-4">
-            These actions cannot be undone.
+            {getText("dangerZoneDescription", UIText.settings.dangerZoneDescription)}
           </p>
           <Button
             variant="destructive"
             size="sm"
             onClick={async () => {
-              if (confirm("Are you sure? This will delete all your data?")) {
+              if (confirm(getText("deleteAccountConfirm", UIText.settings.deleteAccountConfirm))) {
                 try {
                   // TODO: server-side account deletion endpoint should be implemented
                   await fetch(`/api/users/me`, { method: "DELETE" });
                 } catch (e) {
                   // ignore - backend may not implement deletion yet
                 }
-                toast.success("Account deletion initiated");
+                toast.success(getText("deleteAccountSuccess", UIText.settings.deleteAccountSuccess));
                 navigate("/");
               }
             }}
             className="text-xs"
           >
-            Delete account
+            {getText("deleteAccount", UIText.settings.deleteAccount)}
           </Button>
         </div>
       </div>
