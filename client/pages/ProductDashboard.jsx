@@ -5,6 +5,11 @@ import { getInventory, getSales, getClients, getExpenses } from "@/lib/data";
 import { useNavigate } from "react-router-dom";
 import { on } from "@/lib/eventBus";
 import { getUser } from "@/lib/auth";
+<<<<<<< HEAD
+=======
+import { useTranslation } from "@/hooks/useTranslation";
+import { UIText } from "@/lib/uiText";
+>>>>>>> 8340a82 (language toggle)
 
 function parseCurrencyValue(val) {
   if (typeof val === "number") return val;
@@ -25,6 +30,41 @@ export default function ProductDashboard() {
   const [sales, setSales] = useState([]);
   const [clients, setClients] = useState([]);
   const [expenses, setExpenses] = useState([]);
+<<<<<<< HEAD
+=======
+  const translationSource = React.useMemo(
+    () => ({
+      welcomeBack: "Welcome back!",
+      welcomeSummary: "Here's a quick look at your product business.",
+      salesThisMonth: "Sales (This Month)",
+      expensesThisMonth: "Expenses (This Month)",
+      profitThisMonth: "Profit (This Month)",
+      stockLevels: "Stock levels",
+      salesCountLabel: "sales",
+      expensesCountLabel: "expenses",
+      lowLabel: "Low",
+      inStockLabel: "In stock",
+      totalItems: "Total items",
+      recentActivity: UIText.dashboard.recentActivity,
+      quickActions: UIText.dashboard.quickActions,
+      noRecentActivity: "No recent activity",
+      saleTag: "Sale",
+      expenseTag: "Expense",
+      unknownItem: "Unknown item",
+      expenseFallback: "Expense",
+      salesMinusExpenses: "Sales − Expenses",
+      addProduct: "Add New Product",
+      seeExpenses: "See Expenses",
+      addSale: "Add New Sale",
+    }),
+    [],
+  );
+  const { translatedText: dashboardText } = useTranslation(translationSource);
+  const getText = React.useCallback(
+    (key, fallback) => (dashboardText && dashboardText[key] ? dashboardText[key] : fallback),
+    [dashboardText],
+  );
+>>>>>>> 8340a82 (language toggle)
 
   useEffect(() => {
     let mounted = true;
@@ -190,16 +230,26 @@ export default function ProductDashboard() {
     <Layout>
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
+<<<<<<< HEAD
           <h1 className="text-2xl md:text-3xl font-extrabold">Welcome back!</h1>
           <p className="mt-1 text-xs md:text-sm text-muted-foreground">
             Here's a quick look at your product business.
+=======
+          <h1 className="text-2xl md:text-3xl font-extrabold">{getText("welcomeBack", "Welcome back!")}</h1>
+          <p className="mt-1 text-xs md:text-sm text-muted-foreground">
+            {getText("welcomeSummary", "Here's a quick look at your product business.")}
+>>>>>>> 8340a82 (language toggle)
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
           <div className="p-4 bg-card border border-border rounded-lg">
             <div className="text-xs md:text-sm text-muted-foreground">
+<<<<<<< HEAD
               Sales (This Month)
+=======
+              {getText("salesThisMonth", "Sales (This Month)")}
+>>>>>>> 8340a82 (language toggle)
             </div>
             <div className="text-xl md:text-2xl font-bold mt-2">
               {formatCurrency(monthlySales)}
@@ -210,13 +260,21 @@ export default function ProductDashboard() {
                   (s) => !s.createdAt || new Date(s.createdAt) >= monthAgo,
                 ).length
               }{" "}
+<<<<<<< HEAD
               sales
+=======
+              {getText("salesCountLabel", "sales")}
+>>>>>>> 8340a82 (language toggle)
             </div>
           </div>
 
           <div className="p-4 bg-card border border-border rounded-lg">
             <div className="text-xs md:text-sm text-muted-foreground">
+<<<<<<< HEAD
               Expenses (This Month)
+=======
+              {getText("expensesThisMonth", "Expenses (This Month)")}
+>>>>>>> 8340a82 (language toggle)
             </div>
             <div className="text-xl md:text-2xl font-bold mt-2">
               {formatCurrency(monthlyExpenses)}
@@ -227,12 +285,17 @@ export default function ProductDashboard() {
                   (e) => e?.date && String(e.date).startsWith(currentMonth),
                 ).length
               }{" "}
+<<<<<<< HEAD
               expenses
+=======
+              {getText("expensesCountLabel", "expenses")}
+>>>>>>> 8340a82 (language toggle)
             </div>
           </div>
 
           <div className="p-4 bg-card border border-border rounded-lg">
             <div className="text-xs md:text-sm text-muted-foreground">
+<<<<<<< HEAD
               Stock levels
             </div>
             <div className="text-sm md:text-base font-semibold mt-2 flex gap-4">
@@ -241,18 +304,36 @@ export default function ProductDashboard() {
             </div>
             <div className="mt-3 text-xs text-muted-foreground">
               Total items: {inventory.length}
+=======
+              {getText("stockLevels", "Stock levels")}
+            </div>
+            <div className="text-sm md:text-base font-semibold mt-2 flex gap-4">
+              <span className="text-red-600">{getText("lowLabel", "Low")}: {lowCount}</span>
+              <span className="text-green-600">{getText("inStockLabel", "In stock")}: {inStockCount}</span>
+            </div>
+            <div className="mt-3 text-xs text-muted-foreground">
+              {getText("totalItems", "Total items")}: {inventory.length}
+>>>>>>> 8340a82 (language toggle)
             </div>
           </div>
 
           <div className="p-4 bg-card border border-border rounded-lg">
             <div className="text-xs md:text-sm text-muted-foreground">
+<<<<<<< HEAD
               Profit (This Month)
+=======
+              {getText("profitThisMonth", "Profit (This Month)")}
+>>>>>>> 8340a82 (language toggle)
             </div>
             <div className="text-xl md:text-2xl font-bold mt-2">
               {formatCurrency(monthlyProfit)}
             </div>
             <div className="mt-3 text-xs text-muted-foreground">
+<<<<<<< HEAD
               Sales − Expenses
+=======
+              {getText("salesMinusExpenses", "Sales − Expenses")}
+>>>>>>> 8340a82 (language toggle)
             </div>
           </div>
         </div>
@@ -260,7 +341,11 @@ export default function ProductDashboard() {
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="p-4 md:p-6 bg-card border border-border rounded-lg">
             <h3 className="font-semibold text-sm md:text-base">
+<<<<<<< HEAD
               Recent activity
+=======
+              {getText("recentActivity", UIText.dashboard.recentActivity)}
+>>>>>>> 8340a82 (language toggle)
             </h3>
             <ul className="mt-4 space-y-3 text-xs md:text-sm text-muted-foreground">
               {allActivities.length > 0 ? (
@@ -279,7 +364,11 @@ export default function ProductDashboard() {
                       firstItem?.name ||
                       activity.itemName ||
                       activity.name ||
+<<<<<<< HEAD
                       "Unknown item";
+=======
+                      getText("unknownItem", "Unknown item");
+>>>>>>> 8340a82 (language toggle)
                     return (
                       <li
                         key={`${activity.type}-${activity.id || idx}`}
@@ -287,7 +376,11 @@ export default function ProductDashboard() {
                       >
                         <div className="flex-1">
                           <span className="inline-block px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded mr-2">
+<<<<<<< HEAD
                             Sale
+=======
+                            {getText("saleTag", "Sale")}
+>>>>>>> 8340a82 (language toggle)
                           </span>
                           {itemName} —{" "}
                           {formatCurrency(parseCurrencyValue(saleAmount))}
@@ -304,9 +397,15 @@ export default function ProductDashboard() {
                       >
                         <div className="flex-1">
                           <span className="inline-block px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded mr-2">
+<<<<<<< HEAD
                             Expense
                           </span>
                           {activity.description || "Expense"} —{" "}
+=======
+                            {getText("expenseTag", "Expense")}
+                          </span>
+                          {activity.description || getText("expenseFallback", "Expense")} —{" "}
+>>>>>>> 8340a82 (language toggle)
                           {formatCurrency(parseCurrencyValue(expenseAmount))}
                         </div>
                       </li>
@@ -315,7 +414,11 @@ export default function ProductDashboard() {
                 })
               ) : (
                 <>
+<<<<<<< HEAD
                   <li>No recent activity</li>
+=======
+                  <li>{getText("noRecentActivity", "No recent activity")}</li>
+>>>>>>> 8340a82 (language toggle)
                 </>
               )}
             </ul>
@@ -323,7 +426,11 @@ export default function ProductDashboard() {
 
           <div className="p-4 md:p-6 bg-card border border-border rounded-lg">
             <h3 className="font-semibold text-sm md:text-base">
+<<<<<<< HEAD
               Quick actions
+=======
+              {getText("quickActions", UIText.dashboard.quickActions)}
+>>>>>>> 8340a82 (language toggle)
             </h3>
             <div className="mt-4 flex flex-col gap-2 md:gap-3">
               <Button
@@ -331,7 +438,11 @@ export default function ProductDashboard() {
                 onClick={() => navigate("/inventory")}
                 className="w-full text-xs md:text-sm"
               >
+<<<<<<< HEAD
                 Add New Product
+=======
+                {getText("addProduct", "Add New Product")}
+>>>>>>> 8340a82 (language toggle)
               </Button>
               <Button
                 variant="outline"
@@ -339,7 +450,11 @@ export default function ProductDashboard() {
                 onClick={() => navigate("/expenses")}
                 className="w-full text-xs md:text-sm"
               >
+<<<<<<< HEAD
                 See Expenses
+=======
+                {getText("seeExpenses", "See Expenses")}
+>>>>>>> 8340a82 (language toggle)
               </Button>
               <Button
                 variant="ghost"
@@ -347,7 +462,11 @@ export default function ProductDashboard() {
                 onClick={() => navigate("/sales")}
                 className="w-full text-xs md:text-sm"
               >
+<<<<<<< HEAD
                 Add New Sale
+=======
+                {getText("addSale", "Add New Sale")}
+>>>>>>> 8340a82 (language toggle)
               </Button>
             </div>
           </div>

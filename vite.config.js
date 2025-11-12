@@ -10,6 +10,17 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+<<<<<<< HEAD
+=======
+    proxy: {
+      "/nativeai": {
+        target: "https://nativeai.icirnigeria.org",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/nativeai/, ""),
+      },
+    },
+>>>>>>> 8340a82 (language toggle)
   },
   build: {
     outDir: "dist",
