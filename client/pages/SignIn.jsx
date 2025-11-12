@@ -55,6 +55,11 @@ export default function SignIn() {
       return;
     }
 
+    // Prevent multiple simultaneous login attempts
+    if (isLoading) {
+      return;
+    }
+
     setIsLoading(true);
     try {
       const response = await login(email, password);

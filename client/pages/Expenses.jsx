@@ -147,28 +147,42 @@ export default function Expenses() {
   };
 
   const formatDate = (dateVal) => {
-    if (!dateVal) return "";
-    let isoDate = "";
-    if (typeof dateVal === "string") {
-      isoDate = dateVal;
-    } else if (dateVal instanceof Date) {
-      isoDate = dateVal.toISOString().slice(0, 10);
-    } else {
-      try {
-        const parsed = new Date(dateVal);
-        if (!isNaN(parsed.getTime()))
-          isoDate = parsed.toISOString().slice(0, 10);
-      } catch (e) {
-        /* ignore */
+    if (!dateVal) return "N/A";
+    
+    try {
+      let date;
+      
+      // Handle different date formats
+      if (dateVal instanceof Date) {
+        date = dateVal;
+      } else if (typeof dateVal === "string") {
+        // If it's already in YYYY-MM-DD format, use it directly
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+          date = new Date(dateVal + "T00:00:00");
+        } else {
+          // Otherwise, try parsing as ISO string or other formats
+          date = new Date(dateVal);
+        }
+      } else {
+        // Try to parse as date
+        date = new Date(dateVal);
       }
+      
+      // Check if date is valid
+      if (!date || isNaN(date.getTime())) {
+        return "N/A";
+      }
+      
+      // Format the date
+      return date.toLocaleDateString("en-NG", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch (e) {
+      console.warn("Error formatting date:", dateVal, e);
+      return "N/A";
     }
-    if (!isoDate) return String(dateVal);
-    const date = new Date(isoDate + "T00:00:00");
-    return date.toLocaleDateString("en-NG", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
   };
 
   return (
