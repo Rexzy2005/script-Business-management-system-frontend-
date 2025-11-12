@@ -62,15 +62,27 @@ async function runCheck() {
 
     saveState({ alerted });
   } catch (error) {
+    // Don't log or retry on rate limit errors - just skip this check
+    if (error?.message?.includes("429") || error?.message?.includes("Too many requests")) {
+      console.debug("Stock monitor skipped due to rate limit");
+      return;
+    }
     console.warn(`Stock monitor check failed: ${error?.message || error}`);
   }
 }
 
-export function startStockMonitor({ intervalMs = 1000 * 60 * 60 * 12 } = {}) {
+export function startStockMonitor({ intervalMs = 1000 * 60 * 60 * 12, skipInitialRun = false } = {}) {
   if (isRunning) return;
   isRunning = true;
-  // run once immediately
-  runCheck();
+  
+  // Don't run immediately if skipInitialRun is true (to avoid rate limits on page load)
+  if (!skipInitialRun) {
+    // Delay initial run by 2 seconds to avoid rate limits
+    setTimeout(() => {
+      runCheck();
+    }, 2000);
+  }
+  
   monitorInterval = setInterval(() => {
     runCheck();
   }, intervalMs);

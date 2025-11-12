@@ -1,27 +1,25 @@
-import { apiPost, apiGet, getApiBaseUrl } from "./api";
-
-const BASE_URL = getApiBaseUrl();
+import { apiGet, apiPost, getAuthToken } from "./api";
 
 /**
  * Get current user's subscription
  */
 export async function getCurrentSubscription() {
   try {
-    const response = await fetch(`${BASE_URL}/api/subscriptions/current`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("script_token")}`,
-      },
-    });
-
-    const data = await response.json();
+    const response = await apiGet("/api/subscriptions/current");
     return {
-      success: data.success !== false,
-      subscription: data.data?.subscription || null,
-      message: data.message || null,
+      success: response.success !== false,
+      subscription: response.data?.subscription || null,
+      message: response.message || null,
     };
   } catch (error) {
+    // If 401 or 404, return empty subscription (user may not have one)
+    if (error?.message?.includes("401") || error?.message?.includes("404")) {
+      return {
+        success: false,
+        subscription: null,
+        message: "No subscription found",
+      };
+    }
     throw new Error(error?.message || "Failed to get subscription");
   }
 }
@@ -31,22 +29,22 @@ export async function getCurrentSubscription() {
  */
 export async function getSubscriptionStatus() {
   try {
-    const response = await fetch(`${BASE_URL}/api/subscriptions/status`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("script_token")}`,
-      },
-    });
-
-    const data = await response.json();
+    const response = await apiGet("/api/subscriptions/status");
     return {
-      success: data.success !== false,
-      hasActiveSubscription: data.data?.hasActiveSubscription || false,
-      subscription: data.data?.subscription || null,
-      message: data.message || null,
+      success: response.success !== false,
+      hasActiveSubscription: response.data?.hasActiveSubscription || false,
+      subscription: response.data?.subscription || null,
+      message: response.message || null,
     };
   } catch (error) {
+    if (error?.message?.includes("401") || error?.message?.includes("404")) {
+      return {
+        success: false,
+        hasActiveSubscription: false,
+        subscription: null,
+        message: "No subscription found",
+      };
+    }
     throw new Error(error?.message || "Failed to get subscription status");
   }
 }
@@ -56,21 +54,14 @@ export async function getSubscriptionStatus() {
  */
 export async function initializeSubscription(planType) {
   try {
-    const response = await fetch(`${BASE_URL}/api/subscriptions/initialize`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("script_token")}`,
-      },
-      body: JSON.stringify({ planType }),
+    const response = await apiPost("/api/subscriptions/initialize", {
+      planType,
     });
-
-    const data = await response.json();
     return {
-      success: data.success !== false,
-      subscription: data.data?.subscription || null,
-      payment: data.data?.payment || null,
-      message: data.message || null,
+      success: response.success !== false,
+      subscription: response.data?.subscription || null,
+      payment: response.data?.payment || null,
+      message: response.message || null,
     };
   } catch (error) {
     throw new Error(error?.message || "Failed to initialize subscription");
@@ -82,23 +73,14 @@ export async function initializeSubscription(planType) {
  */
 export async function verifySubscription(transactionId, txRef) {
   try {
-    const response = await fetch(`${BASE_URL}/api/subscriptions/verify`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("script_token")}`,
-      },
-      body: JSON.stringify({
-        transaction_id: transactionId,
-        tx_ref: txRef,
-      }),
+    const response = await apiPost("/api/subscriptions/verify", {
+      transaction_id: transactionId,
+      tx_ref: txRef,
     });
-
-    const data = await response.json();
     return {
-      success: data.success !== false,
-      subscription: data.data?.subscription || null,
-      message: data.message || null,
+      success: response.success !== false,
+      subscription: response.data?.subscription || null,
+      message: response.message || null,
     };
   } catch (error) {
     throw new Error(error?.message || "Failed to verify subscription");
@@ -110,21 +92,14 @@ export async function verifySubscription(transactionId, txRef) {
  */
 export async function renewSubscription(planType) {
   try {
-    const response = await fetch(`${BASE_URL}/api/subscriptions/renew`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("script_token")}`,
-      },
-      body: JSON.stringify({ planType }),
+    const response = await apiPost("/api/subscriptions/renew", {
+      planType,
     });
-
-    const data = await response.json();
     return {
-      success: data.success !== false,
-      subscription: data.data?.subscription || null,
-      payment: data.data?.payment || null,
-      message: data.message || null,
+      success: response.success !== false,
+      subscription: response.data?.subscription || null,
+      payment: response.data?.payment || null,
+      message: response.message || null,
     };
   } catch (error) {
     throw new Error(error?.message || "Failed to renew subscription");
@@ -136,20 +111,13 @@ export async function renewSubscription(planType) {
  */
 export async function cancelSubscription(reason = "") {
   try {
-    const response = await fetch(`${BASE_URL}/api/subscriptions/cancel`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("script_token")}`,
-      },
-      body: JSON.stringify({ reason }),
+    const response = await apiPost("/api/subscriptions/cancel", {
+      reason,
     });
-
-    const data = await response.json();
     return {
-      success: data.success !== false,
-      subscription: data.data?.subscription || null,
-      message: data.message || null,
+      success: response.success !== false,
+      subscription: response.data?.subscription || null,
+      message: response.message || null,
     };
   } catch (error) {
     throw new Error(error?.message || "Failed to cancel subscription");

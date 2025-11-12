@@ -17,12 +17,22 @@ import {
 } from "@/lib/apiInventory";
 import { inventoryLimit, canAccessStats } from "@/lib/plans";
 import { emit, on } from "@/lib/eventBus";
+import { getCurrentSubscription } from "@/lib/apiSubscriptions";
 
 export default function Inventory() {
   const [items, setItems] = useState([]);
   const [stats, setStats] = useState(null);
   const [topSelling, setTopSelling] = useState([]);
+  const [subscription, setSubscription] = useState(null);
   const [showNew, setShowNew] = useState(false);
+  const [loading, setLoading] = useState({
+    addItem: false,
+    submitSale: false,
+    bulkAdd: false,
+    export: false,
+    remove: {},
+    addStock: {},
+  });
   const [newItem, setNewItem] = useState({
     name: "",
     totalProducts: "",
@@ -45,40 +55,131 @@ export default function Inventory() {
   const [bulkSku, setBulkSku] = useState("");
 
   useEffect(() => {
+    let mounted = true;
+    
+    // Stagger API calls to avoid rate limiting
     const loadInventory = async () => {
-      const items = await getInventory();
-      setItems(items);
+      try {
+        const items = await getInventory();
+        if (mounted) setItems(items);
+      } catch (e) {
+        console.error("Failed to load inventory:", e);
+      }
     };
+    
+    // Load inventory first (most important)
     loadInventory();
 
-    // fetch stats and top selling only for premium users
-    (async () => {
+    // Fetch subscription info to check premium status (only once on mount)
+    // Cache subscription to avoid repeated API calls
+    const loadSubscription = async () => {
+      // Delay subscription fetch to avoid simultaneous calls
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      if (!mounted) return;
+      
       try {
-        const user = getUser();
-        const statsAllowed = canAccessStats(user);
-        if (statsAllowed) {
-          const s = await getStatistics();
+        // Check if subscription is already cached in localStorage
+        const cachedSub = localStorage.getItem("script_subscription_cache");
+        const cacheTime = localStorage.getItem("script_subscription_cache_time");
+        const now = Date.now();
+        
+        // Use cached subscription if less than 5 minutes old
+        if (cachedSub && cacheTime && (now - Number(cacheTime)) < 5 * 60 * 1000) {
+          try {
+            const parsed = JSON.parse(cachedSub);
+            if (mounted) {
+              setSubscription(parsed);
+              // Load stats if premium (with delay)
+              const user = getUser();
+              const userWithSubscription = { ...user, subscription: parsed };
+              const statsAllowed = canAccessStats(userWithSubscription);
+              if (statsAllowed) {
+                // Delay stats loading to avoid rate limits
+                setTimeout(() => {
+                  if (mounted) loadStats();
+                }, 1000);
+              }
+            }
+            return;
+          } catch (e) {
+            // Cache invalid, fetch fresh
+          }
+        }
+        
+        // Fetch fresh subscription (with delay)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (!mounted) return;
+        
+        const subData = await getCurrentSubscription();
+        if (subData.success && subData.subscription) {
+          // Cache the subscription
+          localStorage.setItem("script_subscription_cache", JSON.stringify(subData.subscription));
+          localStorage.setItem("script_subscription_cache_time", String(now));
+          
+          if (mounted) {
+            setSubscription(subData.subscription);
+            
+            // After subscription is loaded, check if user can access stats
+            const user = getUser();
+            const userWithSubscription = { ...user, subscription: subData.subscription };
+            const statsAllowed = canAccessStats(userWithSubscription);
+            if (statsAllowed) {
+              // Delay stats loading to avoid rate limits
+              setTimeout(() => {
+                if (mounted) loadStats();
+              }, 1500);
+            }
+          }
+        }
+      } catch (e) {
+        // Subscription fetch is optional
+        console.log("Could not fetch subscription:", e);
+      }
+    };
+    
+    const loadStats = async () => {
+      if (!mounted) return;
+      try {
+        const [s, top] = await Promise.all([
+          getStatistics(),
+          getTopSelling(),
+        ]);
+        if (mounted) {
           setStats(s);
-          const top = await getTopSelling();
           setTopSelling(top);
         }
       } catch (e) {
+        // Silently fail stats - not critical
         console.warn(
           `Failed to load inventory stats/top-selling: ${e?.message || e}`,
         );
       }
-    })();
+    };
+    
+    loadSubscription();
 
-    // start background stock monitor (runs twice daily by default)
-    startStockMonitor({ intervalMs: 1000 * 60 * 60 * 12 });
+    // Start background stock monitor with delay (don't run immediately)
+    // Delay initial run by 5 seconds to avoid rate limits on page load
+    const stockMonitorTimeout = setTimeout(() => {
+      if (mounted) {
+        startStockMonitor({ intervalMs: 1000 * 60 * 60 * 12, skipInitialRun: true });
+      }
+    }, 5000);
 
     // Subscribe to sale-added event to refresh inventory when sales are added from Sales page
     const unsubscribe = on("sale-added", async () => {
-      const items = await getInventory();
-      setItems(items);
+      try {
+        const items = await getInventory();
+        if (mounted) setItems(items);
+      } catch (e) {
+        console.error("Failed to refresh inventory:", e);
+      }
     });
 
     return () => {
+      mounted = false;
+      clearTimeout(stockMonitorTimeout);
       stopStockMonitor();
       unsubscribe();
     };
@@ -91,51 +192,77 @@ export default function Inventory() {
 
   const handleAddItem = async (e) => {
     e.preventDefault();
-    const user = getUser();
-    const limit = inventoryLimit(user);
-    if (!newItem.name || !newItem.totalProducts || !newItem.saleType)
-      return toast.error("Please fill all required fields");
+    if (loading.addItem) return;
+    
+    setLoading((prev) => ({ ...prev, addItem: true }));
+    
+    try {
+      const user = getUser();
+      // Merge subscription with user object for premium check
+      const userWithSubscription = subscription 
+        ? { ...user, subscription } 
+        : user;
+      const limit = inventoryLimit(userWithSubscription);
+      if (!newItem.name || !newItem.totalProducts || !newItem.saleType) {
+        toast.error("Please fill all required fields");
+        return;
+      }
 
-    if (items.length >= limit) {
-      return toast.error(
-        `Inventory limit reached for your plan. Upgrade to Premium for unlimited inventory.`,
-      );
+      if (limit !== -1 && items.length >= limit) {
+        toast.error(
+          `Inventory limit reached for your plan. Upgrade to Premium for unlimited inventory.`,
+        );
+        return;
+      }
+
+      if (newItem.saleType === "pieces" && !newItem.piecesPerProduct) {
+        toast.error("Please specify pieces per product");
+        return;
+      }
+      if (newItem.saleType === "pieces" && !newItem.pricePerPiece) {
+        toast.error("Please specify price per piece");
+        return;
+      }
+      if (
+        (newItem.saleType === "bulk" || newItem.saleType === "both") &&
+        !newItem.bulkPrice
+      ) {
+        toast.error("Please specify bulk price");
+        return;
+      }
+
+      const totalQty =
+        Number(newItem.totalProducts) * (Number(newItem.piecesPerProduct) || 1);
+
+      await addInventoryItem({
+        name: newItem.name,
+        totalProducts: Number(newItem.totalProducts),
+        piecesPerProduct: Number(newItem.piecesPerProduct) || 1,
+        bulkPrice: Number(newItem.bulkPrice) || 0,
+        pricePerPiece: Number(newItem.pricePerPiece) || 0,
+        qty: totalQty,
+        saleType: newItem.saleType,
+        value: `₦${(totalQty * (Number(newItem.pricePerPiece) || Number(newItem.bulkPrice) / (Number(newItem.piecesPerProduct) || 1))).toLocaleString()}`,
+      });
+      
+      // Reset form
+      setNewItem({
+        name: "",
+        totalProducts: "",
+        piecesPerProduct: "",
+        bulkPrice: "",
+        pricePerPiece: "",
+        saleType: "",
+      });
+      setShowNew(false);
+      await refresh();
+      toast.success("Product added to inventory");
+    } catch (error) {
+      console.error("Error adding item:", error);
+      toast.error(error?.message || "Failed to add product");
+    } finally {
+      setLoading((prev) => ({ ...prev, addItem: false }));
     }
-
-    if (newItem.saleType === "pieces" && !newItem.piecesPerProduct)
-      return toast.error("Please specify pieces per product");
-    if (newItem.saleType === "pieces" && !newItem.pricePerPiece)
-      return toast.error("Please specify price per piece");
-    if (
-      (newItem.saleType === "bulk" || newItem.saleType === "both") &&
-      !newItem.bulkPrice
-    )
-      return toast.error("Please specify bulk price");
-
-    const totalQty =
-      Number(newItem.totalProducts) * (Number(newItem.piecesPerProduct) || 1);
-
-    await addInventoryItem({
-      name: newItem.name,
-      totalProducts: Number(newItem.totalProducts),
-      piecesPerProduct: Number(newItem.piecesPerProduct) || 1,
-      bulkPrice: Number(newItem.bulkPrice) || 0,
-      pricePerPiece: Number(newItem.pricePerPiece) || 0,
-      qty: totalQty,
-      saleType: newItem.saleType,
-      value: `₦${(totalQty * (Number(newItem.pricePerPiece) || Number(newItem.bulkPrice) / (Number(newItem.piecesPerProduct) || 1))).toLocaleString()}`,
-    });
-    setNewItem({
-      name: "",
-      totalProducts: "",
-      piecesPerProduct: "",
-      bulkPrice: "",
-      pricePerPiece: "",
-      saleType: "",
-    });
-    setShowNew(false);
-    await refresh();
-    toast.success("Product added to inventory");
   };
 
   const determineSaleType = (item) => {
@@ -164,53 +291,102 @@ export default function Inventory() {
     setShowSale(true);
   };
 
-  // Auto-calculate sale amount when saleForm.sku or saleForm.qty changes
+  // Auto-calculate sale amount when saleForm.sku, saleForm.qty, or saleForm.saleType changes
+  // Debounced to prevent excessive calculations
   useEffect(() => {
-    const item = items.find((i) => i.sku === saleForm.sku);
-    if (!item) return;
-    const qty = Number(saleForm.qty) || 0;
-    const pricePerPiece = Number(
-      item.pricePerPiece ?? item.unitPrice ?? item.retailPrice ?? 0,
-    );
-    const bulkPrice = Number(item.bulkPrice ?? item.wholesalePrice ?? 0);
-    const usePiece =
-      item.saleType === "pieces" ||
-      (item.saleType === "both" && pricePerPiece > 0) ||
-      (!item.saleType && pricePerPiece > 0);
-    const unit = usePiece ? pricePerPiece : bulkPrice;
-    const computed = qty * (unit || 0);
-    setSaleForm((s) => ({ ...s, amount: computed }));
-  }, [saleForm.sku, saleForm.qty, items]);
+    if (!saleForm.sku || !saleForm.qty) return;
+    
+    const timeoutId = setTimeout(() => {
+      const item = items.find((i) => i.sku === saleForm.sku);
+      if (!item) return;
+      const qty = Number(saleForm.qty) || 0;
+      const pricePerPiece = Number(
+        item.pricePerPiece ?? item.unitPrice ?? item.retailPrice ?? 0,
+      );
+      const bulkPrice = Number(item.bulkPrice ?? item.wholesalePrice ?? 0);
+      
+      // Use selected sale type, or determine from item
+      const saleType = saleForm.saleType || determineSaleType(item);
+      
+      let unit = 0;
+      if (saleType === "pieces" && pricePerPiece > 0) {
+        unit = pricePerPiece;
+      } else if (saleType === "bulk" && bulkPrice > 0) {
+        unit = bulkPrice;
+      } else if (saleType === "both") {
+        // If both, prefer pieces if available, otherwise bulk
+        unit = pricePerPiece > 0 ? pricePerPiece : bulkPrice;
+      } else {
+        // Fallback: use whichever is available
+        unit = pricePerPiece > 0 ? pricePerPiece : bulkPrice;
+      }
+      
+      const computed = qty * (unit || 0);
+      setSaleForm((s) => ({ ...s, amount: computed }));
+    }, 300); // 300ms debounce
+    
+    return () => clearTimeout(timeoutId);
+  }, [saleForm.sku, saleForm.qty, saleForm.saleType, items]);
 
   const handleSubmitSale = async (e) => {
     e.preventDefault();
-    const item = items.find((i) => i.sku === saleForm.sku);
-    if (!item) return toast.error("Item not found");
-    if (!saleForm.qty || saleForm.qty <= 0)
-      return toast.error("Enter a valid quantity");
-    if (saleForm.qty > item.qty) return toast.error("Not enough stock");
+    if (loading.submitSale) return;
+    
+    setLoading((prev) => ({ ...prev, submitSale: true }));
+    
+    try {
+      const item = items.find((i) => i.sku === saleForm.sku);
+      if (!item) {
+        toast.error("Item not found");
+        return;
+      }
+      if (!saleForm.qty || saleForm.qty <= 0) {
+        toast.error("Enter a valid quantity");
+        return;
+      }
+      if (saleForm.qty > item.qty) {
+        toast.error("Not enough stock");
+        return;
+      }
+      if (!saleForm.saleType) {
+        toast.error("Please select a sale type");
+        return;
+      }
 
-    const user = getUser();
-    const itemSaleType =
-      (item && (item.saleType || determineSaleType(item))) ||
-      saleForm.saleType ||
-      "bulk";
-    const record = await addSale({
-      itemSku: saleForm.sku,
-      itemName: saleForm.name,
-      qty: saleForm.qty,
-      amount: saleForm.amount,
-      customer: saleForm.customer || undefined,
-      saleType: itemSaleType,
-      createdBy: user || null,
-    });
+      const user = getUser();
+      // Use the selected sale type from the form
+      const record = await addSale({
+        itemSku: saleForm.sku,
+        itemName: saleForm.name,
+        qty: saleForm.qty,
+        amount: saleForm.amount,
+        customer: saleForm.customer || undefined,
+        saleType: saleForm.saleType,
+        createdBy: user || null,
+      });
 
-    await updateInventoryQty(saleForm.sku, -saleForm.qty);
-    await refresh();
-    setShowSale(false);
-    toast.success(`Sale recorded: ${record.id}`);
-    // Emit event so other pages (Dashboard, Sales, Analytics) refresh their data
-    emit("sale-added", record);
+      await updateInventoryQty(saleForm.sku, -saleForm.qty);
+      await refresh();
+      
+      // Reset form
+      setSaleForm({
+        sku: "",
+        name: "",
+        qty: 1,
+        amount: 0,
+        customer: "",
+        saleType: "",
+      });
+      setShowSale(false);
+      toast.success(`Sale recorded: ${record.id}`);
+      // Emit event so other pages (Dashboard, Sales, Analytics) refresh their data
+      emit("sale-added", record);
+    } catch (error) {
+      console.error("Error submitting sale:", error);
+      toast.error(error?.message || "Failed to record sale");
+    } finally {
+      setLoading((prev) => ({ ...prev, submitSale: false }));
+    }
   };
 
   return (
@@ -228,8 +404,12 @@ export default function Inventory() {
               size="sm"
               onClick={() => {
                 const user = getUser();
-                const limit = inventoryLimit(user);
-                if (items.length >= limit) {
+                // Use cached subscription instead of fetching
+                const userWithSubscription = subscription 
+                  ? { ...user, subscription } 
+                  : user;
+                const limit = inventoryLimit(userWithSubscription);
+                if (limit !== -1 && items.length >= limit) {
                   return toast.error(
                     "Inventory limit reached for your plan. Upgrade to Premium to add more products.",
                   );
@@ -243,14 +423,23 @@ export default function Inventory() {
             <Button
               variant="outline"
               size="sm"
+              disabled={loading.export}
               onClick={async () => {
-                const user = getUser();
-                if (!canAccessStats(user)) {
-                  return toast.error(
-                    "Export and detailed statistics are available on Premium only. Upgrade to access.",
-                  );
-                }
+                if (loading.export) return;
+                setLoading((prev) => ({ ...prev, export: true }));
+                
                 try {
+                  const user = getUser();
+                  // Merge subscription with user object for premium check
+                  const userWithSubscription = subscription 
+                    ? { ...user, subscription } 
+                    : user;
+                  if (!canAccessStats(userWithSubscription)) {
+                    toast.error(
+                      "Export and detailed statistics are available on Premium only. Upgrade to access.",
+                    );
+                    return;
+                  }
                   const csv = await exportInventory();
                   const blob = new Blob([csv], { type: "text/csv" });
                   const url = URL.createObjectURL(blob);
@@ -267,11 +456,13 @@ export default function Inventory() {
                     `Failed to export inventory: ${e?.message || e}`,
                   );
                   toast.error("Failed to export inventory");
+                } finally {
+                  setLoading((prev) => ({ ...prev, export: false }));
                 }
               }}
               className="w-full md:w-auto text-xs md:text-sm"
             >
-              Export CSV
+              {loading.export ? "Exporting..." : "Export CSV"}
             </Button>
           </div>
         </div>
@@ -331,12 +522,27 @@ export default function Inventory() {
                   </span>
                 ) : null}
               </div>
-              <div className="text-xs md:text-sm mt-2">Qty: {it.qty}</div>
-              <div className="text-xs md:text-sm">Value: {it.value}</div>
+              <div className="text-xs md:text-sm mt-2">
+                Qty: <span className="font-semibold">{it.qty.toLocaleString()}</span>
+              </div>
+              <div className="text-xs md:text-sm">
+                Value: <span className="font-semibold">{it.value}</span>
+              </div>
+              {it.bulkPrice && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  Bulk: ₦{Number(it.bulkPrice).toLocaleString()}
+                </div>
+              )}
+              {it.pricePerPiece && (
+                <div className="text-xs text-muted-foreground">
+                  Per Piece: ₦{Number(it.pricePerPiece).toLocaleString()}
+                </div>
+              )}
 
               <div className="mt-4 flex flex-col gap-2">
                 <Button
                   size="xs"
+                  disabled={loading.addStock[it.sku]}
                   onClick={() => {
                     setBulkSku(it.sku);
                     setBulkQty(1);
@@ -349,16 +555,26 @@ export default function Inventory() {
                 <Button
                   size="xs"
                   variant="outline"
+                  disabled={loading.remove[it.sku]}
                   onClick={async () => {
+                    if (loading.remove[it.sku]) return;
                     if (confirm("Remove 1 unit from stock?")) {
-                      await updateInventoryQty(it.sku, -1);
-                      await refresh();
-                      toast.success("Removed 1 unit");
+                      setLoading((prev) => ({ ...prev, remove: { ...prev.remove, [it.sku]: true } }));
+                      try {
+                        await updateInventoryQty(it.sku, -1);
+                        await refresh();
+                        toast.success("Removed 1 unit");
+                      } catch (error) {
+                        console.error("Error removing unit:", error);
+                        toast.error("Failed to remove unit");
+                      } finally {
+                        setLoading((prev) => ({ ...prev, remove: { ...prev.remove, [it.sku]: false } }));
+                      }
                     }
                   }}
                   className="text-xs w-full"
                 >
-                  - Remove
+                  {loading.remove[it.sku] ? "Removing..." : "- Remove"}
                 </Button>
                 <Button
                   size="xs"
@@ -400,10 +616,14 @@ export default function Inventory() {
             onSubmit={handleAddItem}
             className="bg-card border border-border rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
           >
-            <h3 className="text-lg font-semibold">Add new product</h3>
+            <h3 className="text-lg font-semibold mb-2">Add New Product</h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              Enter product details below. All fields marked with * are required.
+            </p>
+            
             <label className="block mt-4">
               <div className="text-xs md:text-sm font-medium mb-2">
-                Product name
+                Product Name <span className="text-red-500">*</span>
               </div>
               <input
                 value={newItem.name}
@@ -411,13 +631,17 @@ export default function Inventory() {
                   setNewItem((s) => ({ ...s, name: e.target.value }))
                 }
                 className="w-full rounded-md border border-border px-3 py-2 bg-background text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="e.g. Rice, Beans"
+                placeholder="e.g. Rice, Beans, Sugar"
+                required
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Enter the name of the product you want to add to inventory
+              </p>
             </label>
 
-            <label className="block mt-3">
+            <label className="block mt-4">
               <div className="text-xs md:text-sm font-medium mb-2">
-                Sale type
+                Sale Type <span className="text-red-500">*</span>
               </div>
               <select
                 value={newItem.saleType}
@@ -425,95 +649,157 @@ export default function Inventory() {
                   setNewItem((s) => ({ ...s, saleType: e.target.value }))
                 }
                 className="w-full rounded-md border border-border px-3 py-2 bg-background text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                required
               >
-                <option value="">Select sale type</option>
-                <option value="bulk">Bulk Sale</option>
-                <option value="pieces">Pieces Sale</option>
+                <option value="">Select how you sell this product</option>
+                <option value="bulk">Bulk Sale Only</option>
+                <option value="pieces">Pieces Sale Only</option>
                 <option value="both">Both (Bulk & Pieces)</option>
               </select>
-            </label>
-
-            <label className="block mt-3">
-              <div className="text-xs md:text-sm font-medium mb-2">
-                Total number of products
-              </div>
-              <input
-                type="number"
-                min="1"
-                value={newItem.totalProducts}
-                onChange={(e) =>
-                  setNewItem((s) => ({ ...s, totalProducts: e.target.value }))
-                }
-                className="w-full rounded-md border border-border px-3 py-2 bg-background text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="e.g. 50 (products in stock)"
-              />
               <p className="text-xs text-muted-foreground mt-1">
-                How many individual products do you have?
+                <strong>Bulk:</strong> Sell entire products (e.g., 1 bag of rice) | 
+                <strong> Pieces:</strong> Sell individual pieces (e.g., 1 cup of rice) | 
+                <strong> Both:</strong> Allow both selling methods
               </p>
             </label>
 
+            <label className="block mt-4">
+              <div className="text-xs md:text-sm font-medium mb-2">
+                Total Number of Products <span className="text-red-500">*</span>
+              </div>
+              <input
+                type="text"
+                min="1"
+                value={newItem.totalProducts ? Number(newItem.totalProducts).toLocaleString() : ""}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/,/g, '');
+                  if (value === '' || /^\d+$/.test(value)) {
+                    setNewItem((s) => ({ ...s, totalProducts: value }));
+                  }
+                }}
+                className="w-full rounded-md border border-border px-3 py-2 bg-background text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="0"
+                required
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                <strong>Example:</strong> If you have 50 bags of rice in stock, enter <strong>50</strong>
+              </p>
+            </label>
+            
+            {/* Calculated Summary */}
+            {newItem.totalProducts && newItem.saleType && (
+              <div className="mt-4 p-3 bg-accent/50 rounded-lg border border-border">
+                <div className="text-xs font-medium mb-2">Summary</div>
+                <div className="space-y-1 text-xs text-muted-foreground">
+                  {newItem.saleType === "pieces" || newItem.saleType === "both" ? (
+                    <>
+                      {newItem.piecesPerProduct && (
+                        <div>
+                          Total Pieces: <span className="font-semibold text-foreground">
+                            {(Number(newItem.totalProducts) * Number(newItem.piecesPerProduct || 1)).toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+                      {newItem.pricePerPiece && (
+                        <div>
+                          Total Value (Pieces): <span className="font-semibold text-foreground">
+                            ₦{((Number(newItem.totalProducts) * Number(newItem.piecesPerProduct || 1)) * Number(newItem.pricePerPiece)).toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  ) : null}
+                  {newItem.saleType === "bulk" || newItem.saleType === "both" ? (
+                    <>
+                      {newItem.bulkPrice && (
+                        <div>
+                          Total Value (Bulk): <span className="font-semibold text-foreground">
+                            ₦{(Number(newItem.totalProducts) * Number(newItem.bulkPrice)).toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            )}
+
             {(newItem.saleType === "pieces" || newItem.saleType === "both") && (
               <>
-                <label className="block mt-3">
+                <label className="block mt-4">
                   <div className="text-xs md:text-sm font-medium mb-2">
-                    Pieces per product
+                    Pieces Per Product <span className="text-red-500">*</span>
                   </div>
                   <input
-                    type="number"
+                    type="text"
                     min="1"
-                    value={newItem.piecesPerProduct}
-                    onChange={(e) =>
-                      setNewItem((s) => ({
-                        ...s,
-                        piecesPerProduct: e.target.value,
-                      }))
-                    }
+                    value={newItem.piecesPerProduct ? Number(newItem.piecesPerProduct).toLocaleString() : ""}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/,/g, '');
+                      if (value === '' || /^\d+$/.test(value)) {
+                        setNewItem((s) => ({
+                          ...s,
+                          piecesPerProduct: value,
+                        }));
+                      }
+                    }}
                     className="w-full rounded-md border border-border px-3 py-2 bg-background text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="e.g. 12 (if selling by pieces)"
+                    placeholder="0"
+                    required={newItem.saleType === "pieces" || newItem.saleType === "both"}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    How many pieces in each product?
+                    <strong>Example:</strong> If 1 bag contains 12 cups, enter <strong>12</strong>
                   </p>
                 </label>
 
-                <label className="block mt-3">
+                <label className="block mt-4">
                   <div className="text-xs md:text-sm font-medium mb-2">
-                    Price per piece (₦)
+                    Price Per Piece (₦) <span className="text-red-500">*</span>
                   </div>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={newItem.pricePerPiece}
-                    onChange={(e) =>
-                      setNewItem((s) => ({
-                        ...s,
-                        pricePerPiece: e.target.value,
-                      }))
-                    }
+                    type="text"
+                    value={newItem.pricePerPiece ? Number(newItem.pricePerPiece).toLocaleString() : ""}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/,/g, '');
+                      if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                        setNewItem((s) => ({
+                          ...s,
+                          pricePerPiece: value,
+                        }));
+                      }
+                    }}
                     className="w-full rounded-md border border-border px-3 py-2 bg-background text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="0.00"
+                    placeholder="0"
+                    required={newItem.saleType === "pieces" || newItem.saleType === "both"}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    <strong>Example:</strong> If you sell 1 cup for ₦500, enter <strong>500</strong>
+                  </p>
                 </label>
               </>
             )}
 
             {(newItem.saleType === "bulk" || newItem.saleType === "both") && (
-              <label className="block mt-3">
+              <label className="block mt-4">
                 <div className="text-xs md:text-sm font-medium mb-2">
-                  Bulk price per product (₦)
+                  Bulk Price Per Product (₦) <span className="text-red-500">*</span>
                 </div>
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={newItem.bulkPrice}
-                  onChange={(e) =>
-                    setNewItem((s) => ({ ...s, bulkPrice: e.target.value }))
-                  }
+                  type="text"
+                  value={newItem.bulkPrice ? Number(newItem.bulkPrice).toLocaleString() : ""}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/,/g, '');
+                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                      setNewItem((s) => ({ ...s, bulkPrice: value }));
+                    }
+                  }}
                   className="w-full rounded-md border border-border px-3 py-2 bg-background text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="0.00"
+                  placeholder="0"
+                  required={newItem.saleType === "bulk" || newItem.saleType === "both"}
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  <strong>Example:</strong> If you sell 1 bag for ₦5,000, enter <strong>5000</strong>
+                </p>
               </label>
             )}
 
@@ -526,8 +812,8 @@ export default function Inventory() {
               >
                 Cancel
               </Button>
-              <Button type="submit" size="sm">
-                Add product
+              <Button type="submit" size="sm" disabled={loading.addItem}>
+                {loading.addItem ? "Adding..." : "Add product"}
               </Button>
             </div>
           </form>
@@ -538,12 +824,17 @@ export default function Inventory() {
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50 p-4">
           <form
             onSubmit={handleSubmitSale}
-            className="bg-card border border-border rounded-lg p-6 w-full max-w-md"
+            className="bg-card border border-border rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
           >
-            <h3 className="text-lg font-semibold">Record sale</h3>
+            <h3 className="text-lg font-semibold mb-2">Record Sale</h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              Record a sale transaction for a product in your inventory
+            </p>
 
-            <label className="block mt-3">
-              <div className="text-xs md:text-sm font-medium mb-2">Item</div>
+            <label className="block mt-4">
+              <div className="text-xs md:text-sm font-medium mb-2">
+                Select Product <span className="text-red-500">*</span>
+              </div>
               <select
                 value={saleForm.sku}
                 onChange={(e) => {
@@ -558,48 +849,112 @@ export default function Inventory() {
                   }));
                 }}
                 className="w-full rounded-md border border-border px-3 py-2 bg-background text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                required
               >
+                <option value="">Choose a product...</option>
                 {items.map((i) => (
                   <option key={i.sku} value={i.sku}>
-                    {i.sku} — {i.name} (Available: {i.qty})
+                    {i.sku} — {i.name} (Available: {i.qty.toLocaleString()})
                   </option>
                 ))}
               </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Select the product you sold from the dropdown
+              </p>
             </label>
 
-            <label className="block mt-3">
+            {saleForm.sku && (() => {
+              const selectedItem = items.find((i) => i.sku === saleForm.sku);
+              const canSellBulk = selectedItem && (selectedItem.saleType === "bulk" || selectedItem.saleType === "both");
+              const canSellPieces = selectedItem && (selectedItem.saleType === "pieces" || selectedItem.saleType === "both");
+              
+              return (
+                <label className="block mt-4">
+                  <div className="text-xs md:text-sm font-medium mb-2">
+                    Sale Type <span className="text-red-500">*</span>
+                  </div>
+                  <select
+                    value={saleForm.saleType}
+                    onChange={(e) => {
+                      setSaleForm((s) => ({ ...s, saleType: e.target.value }));
+                    }}
+                    className="w-full rounded-md border border-border px-3 py-2 bg-background text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    required
+                  >
+                    {canSellBulk && canSellPieces ? (
+                      <>
+                        <option value="bulk">Bulk Sale</option>
+                        <option value="pieces">Pieces Sale</option>
+                      </>
+                    ) : canSellBulk ? (
+                      <option value="bulk">Bulk Sale</option>
+                    ) : canSellPieces ? (
+                      <option value="pieces">Pieces Sale</option>
+                    ) : (
+                      <option value="bulk">Bulk Sale</option>
+                    )}
+                  </select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {canSellBulk && canSellPieces 
+                      ? "Choose whether you sold in bulk or by pieces"
+                      : canSellBulk 
+                        ? "This product is sold in bulk only"
+                        : "This product is sold by pieces only"}
+                  </p>
+                </label>
+              );
+            })()}
+
+            <label className="block mt-4">
               <div className="text-xs md:text-sm font-medium mb-2">
-                Quantity
+                Quantity Sold <span className="text-red-500">*</span>
               </div>
               <input
-                type="number"
+                type="text"
                 min={1}
-                value={saleForm.qty}
-                onChange={(e) =>
-                  setSaleForm((s) => ({ ...s, qty: Number(e.target.value) }))
-                }
+                value={saleForm.qty ? Number(saleForm.qty).toLocaleString() : ""}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/,/g, '');
+                  if (value === '' || /^\d+$/.test(value)) {
+                    setSaleForm((s) => ({ ...s, qty: value === '' ? 1 : Number(value) }));
+                  }
+                }}
                 className="w-full rounded-md border border-border px-3 py-2 bg-background text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="0"
+                required
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                {saleForm.saleType === "pieces" 
+                  ? "Enter the number of pieces sold (e.g., 5 pieces)"
+                  : "Enter the number of products sold (e.g., 2 bags)"}
+              </p>
             </label>
 
-            <label className="block mt-3">
+            <label className="block mt-4">
               <div className="text-xs md:text-sm font-medium mb-2">
-                Amount (NGN)
+                Total Amount (₦) <span className="text-red-500">*</span>
               </div>
               <input
-                type="number"
-                min={0}
-                value={saleForm.amount}
-                onChange={(e) =>
-                  setSaleForm((s) => ({ ...s, amount: Number(e.target.value) }))
-                }
+                type="text"
+                value={saleForm.amount ? Number(saleForm.amount).toLocaleString() : ""}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/,/g, '');
+                  if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                    setSaleForm((s) => ({ ...s, amount: Number(value) }));
+                  }
+                }}
                 className="w-full rounded-md border border-border px-3 py-2 bg-background text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="0"
+                required
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Total amount received for this sale. Amount is auto-calculated based on quantity and price.
+              </p>
             </label>
 
-            <label className="block mt-3">
+            <label className="block mt-4">
               <div className="text-xs md:text-sm font-medium mb-2">
-                Customer (optional)
+                Customer Name (Optional)
               </div>
               <input
                 value={saleForm.customer}
@@ -607,15 +962,52 @@ export default function Inventory() {
                   setSaleForm((s) => ({ ...s, customer: e.target.value }))
                 }
                 className="w-full rounded-md border border-border px-3 py-2 bg-background text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="e.g. John Doe"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Optional: Enter the customer's name for record keeping
+              </p>
             </label>
 
-            <div className="mt-3">
-              <div className="text-xs text-muted-foreground">Type</div>
-              <div className="text-sm font-medium">
-                {saleForm.saleType || "bulk"}
-              </div>
-            </div>
+            {/* Sale Summary */}
+            {saleForm.sku && saleForm.qty > 0 && saleForm.amount > 0 && (() => {
+              const selectedItem = items.find((i) => i.sku === saleForm.sku);
+              return (
+                <div className="mt-4 p-3 bg-accent/50 rounded-lg border border-border">
+                  <div className="text-xs font-medium mb-2">Sale Summary</div>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Product:</span>
+                      <span className="font-semibold">{saleForm.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Sale Type:</span>
+                      <span className="font-semibold capitalize">{saleForm.saleType || "bulk"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Quantity:</span>
+                      <span className="font-semibold">{saleForm.qty.toLocaleString()}</span>
+                    </div>
+                    {selectedItem && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Unit Price:</span>
+                        <span className="font-semibold">
+                          ₦{saleForm.saleType === "pieces" && selectedItem.pricePerPiece
+                            ? Number(selectedItem.pricePerPiece).toLocaleString()
+                            : selectedItem.bulkPrice
+                            ? Number(selectedItem.bulkPrice).toLocaleString()
+                            : "0"}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between pt-2 border-t border-border">
+                      <span className="text-muted-foreground font-medium">Total Amount:</span>
+                      <span className="font-bold text-primary">₦{saleForm.amount.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="mt-4 flex items-center justify-end gap-3">
               <Button
@@ -623,11 +1015,12 @@ export default function Inventory() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowSale(false)}
+                disabled={loading.submitSale}
               >
                 Cancel
               </Button>
-              <Button type="submit" size="sm">
-                Record sale
+              <Button type="submit" size="sm" disabled={loading.submitSale}>
+                {loading.submitSale ? "Recording..." : "Record sale"}
               </Button>
             </div>
           </form>
@@ -639,29 +1032,60 @@ export default function Inventory() {
           <form
             onSubmit={async (e) => {
               e.preventDefault();
-              const q = Number(bulkQty);
-              if (!q || q <= 0) return toast.error("Enter a valid quantity");
-              await updateInventoryQty(bulkSku, q);
-              await refresh();
-              setShowBulkAdd(false);
-              toast.success(`Added ${q} units`);
+              if (loading.bulkAdd) return;
+              
+              setLoading((prev) => ({ ...prev, bulkAdd: true }));
+              
+              try {
+                const q = Number(bulkQty);
+                if (!q || q <= 0) {
+                  toast.error("Enter a valid quantity");
+                  return;
+                }
+                await updateInventoryQty(bulkSku, q);
+                await refresh();
+                setBulkQty(1);
+                setShowBulkAdd(false);
+                toast.success(`Added ${q.toLocaleString()} units`);
+              } catch (error) {
+                console.error("Error adding stock:", error);
+                toast.error(error?.message || "Failed to add stock");
+              } finally {
+                setLoading((prev) => ({ ...prev, bulkAdd: false }));
+              }
             }}
             className="bg-card border border-border rounded-lg p-6 w-full max-w-md"
           >
-            <h3 className="text-lg font-semibold">Add stock (bulk)</h3>
-            <p className="text-xs text-muted-foreground mt-1">SKU: {bulkSku}</p>
+            <h3 className="text-lg font-semibold mb-2">Add Stock</h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              Add more units to an existing product in your inventory
+            </p>
+            
+            <div className="mb-4 p-3 bg-accent/50 rounded-lg">
+              <div className="text-xs text-muted-foreground">Product SKU</div>
+              <div className="text-sm font-semibold">{bulkSku}</div>
+            </div>
 
-            <label className="block mt-3">
+            <label className="block mt-4">
               <div className="text-xs md:text-sm font-medium mb-2">
-                Quantity to add
+                Quantity to Add <span className="text-red-500">*</span>
               </div>
               <input
-                type="number"
-                min={1}
-                value={bulkQty}
-                onChange={(e) => setBulkQty(Number(e.target.value))}
+                type="text"
+                value={bulkQty ? Number(bulkQty).toLocaleString() : "1"}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/,/g, '');
+                  if (value === '' || /^\d+$/.test(value)) {
+                    setBulkQty(value === '' ? 1 : Number(value));
+                  }
+                }}
                 className="w-full rounded-md border border-border px-3 py-2 bg-background text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="0"
+                required
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Enter the number of units you want to add to this product's stock
+              </p>
             </label>
 
             <div className="mt-4 flex items-center justify-end gap-3">
@@ -669,12 +1093,16 @@ export default function Inventory() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setShowBulkAdd(false)}
+                onClick={() => {
+                  setBulkQty(1);
+                  setShowBulkAdd(false);
+                }}
+                disabled={loading.bulkAdd}
               >
                 Cancel
               </Button>
-              <Button type="submit" size="sm">
-                Add stock
+              <Button type="submit" size="sm" disabled={loading.bulkAdd}>
+                {loading.bulkAdd ? "Adding..." : "Add stock"}
               </Button>
             </div>
           </form>
