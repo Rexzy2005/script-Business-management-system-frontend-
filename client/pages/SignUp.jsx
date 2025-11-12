@@ -70,7 +70,7 @@ export default function SignUp() {
     {
       id: "standard",
       name: "Standard",
-      price: "₦500 / month or ₦5,000 / year",
+      price: "₦200 / month or ₦2,000 / year",
       description:
         "Full features with unlimited inventory and advanced analytics",
       features: [
@@ -96,7 +96,7 @@ export default function SignUp() {
                 Get started with Script
               </h2>
               <p className="text-sm text-muted-foreground mt-2">
-                Complete business management for ₦500/month or ₦5,000/year
+                Complete business management for ₦200/month or ₦2,000/year
               </p>
 
               <form

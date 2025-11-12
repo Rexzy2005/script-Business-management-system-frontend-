@@ -116,7 +116,7 @@ export default function PlanConfirmation() {
             </div>
             <div className="text-right">
               <div className="text-lg font-bold">Standard</div>
-              <div className="text-2xl font-extrabold">₦500</div>
+              <div className="text-2xl font-extrabold">₦200</div>
               <div className="text-sm text-muted-foreground">/month</div>
             </div>
           </div>
@@ -172,7 +172,7 @@ export default function PlanConfirmation() {
                 >
                   {isLoading
                     ? "Processing..."
-                    : "Pay ₦500 & Activate Account"}
+                    : "Pay ₦200 & Activate Account"}
                 </Button>
               </div>
 
