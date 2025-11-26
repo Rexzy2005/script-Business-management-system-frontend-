@@ -8,6 +8,7 @@ import {
   addSale,
 } from "@/lib/data";
 import { getUser } from "@/lib/auth";
+import { useTranslation } from "@/hooks/useTranslation";
 import { toast } from "sonner";
 import { startStockMonitor, stopStockMonitor } from "@/lib/stockMonitor";
 import {
@@ -20,6 +21,7 @@ import { emit, on } from "@/lib/eventBus";
 import { getCurrentSubscription } from "@/lib/apiSubscriptions";
 
 export default function Inventory() {
+  const { t } = useTranslation();
   const [items, setItems] = useState([]);
   const [stats, setStats] = useState(null);
   const [topSelling, setTopSelling] = useState([]);
@@ -394,9 +396,9 @@ export default function Inventory() {
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold">Inventory</h1>
+            <h1 className="text-2xl md:text-3xl font-extrabold">{t("Inventory")}</h1>
             <p className="mt-1 text-xs md:text-sm text-muted-foreground">
-              Track stock levels and manage products.
+              {t("Track stock levels and manage products")}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 md:gap-3 w-full md:w-auto">
@@ -411,14 +413,14 @@ export default function Inventory() {
                 const limit = inventoryLimit(userWithSubscription);
                 if (limit !== -1 && items.length >= limit) {
                   return toast.error(
-                    "Inventory limit reached for your plan. Upgrade to Premium to add more products.",
+                    t("Inventory limit reached for your plan. Upgrade to Premium to add more products"),
                   );
                 }
                 setShowNew(true);
               }}
               className="w-full md:w-auto text-xs md:text-sm"
             >
-              New product
+              {t("New product")}
             </Button>
             <Button
               variant="outline"
@@ -436,7 +438,7 @@ export default function Inventory() {
                     : user;
                   if (!canAccessStats(userWithSubscription)) {
                     toast.error(
-                      "Export and detailed statistics are available on Premium only. Upgrade to access.",
+                      t("Export and detailed statistics are available on Premium only. Upgrade to access"),
                     );
                     return;
                   }

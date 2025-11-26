@@ -10,6 +10,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { getExpenses, addExpense, deleteExpense } from "@/lib/data";
+import { useTranslation } from "@/hooks/useTranslation";
 import { toast } from "sonner";
 import { emit, on } from "@/lib/eventBus";
 
@@ -26,6 +27,7 @@ const EXPENSE_CATEGORIES = [
 ];
 
 export default function Expenses() {
+  const { t } = useTranslation();
   const [expenses, setExpenses] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -56,7 +58,7 @@ export default function Expenses() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.description.trim() || !formData.amount) {
-      toast.error("Please fill in all fields");
+      toast.error(t("Please fill in all fields"));
       return;
     }
 
@@ -79,20 +81,20 @@ export default function Expenses() {
       date: new Date().toISOString().split("T")[0],
     });
     setShowForm(false);
-    toast.success("Expense added successfully");
+    toast.success(t("Expense added successfully"));
     // Emit event so other pages (Dashboard, etc.) refresh their data
     emit("expense-added", newExpense);
   };
 
   const handleDelete = async (id) => {
     if (!id) {
-      toast.error("Invalid expense ID");
+      toast.error(t("Invalid expense ID"));
       return;
     }
     await deleteExpense(id);
     const updatedExpenses = await getExpenses();
     setExpenses(updatedExpenses || []);
-    toast.success("Expense deleted");
+    toast.success(t("Expense deleted"));
   };
 
   // Normalize expense date to an ISO date string (YYYY-MM-DD) for comparisons
@@ -190,9 +192,9 @@ export default function Expenses() {
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold">Expenses</h1>
+            <h1 className="text-2xl md:text-3xl font-extrabold">{t("Expenses")}</h1>
             <p className="mt-1 text-xs md:text-sm text-muted-foreground">
-              Track and manage your business expenses
+              {t("Track and manage your business expenses")}
             </p>
           </div>
           <Button
@@ -200,7 +202,7 @@ export default function Expenses() {
             size="sm"
             className="w-full md:w-auto text-xs md:text-sm"
           >
-            {showForm ? "Cancel" : "Add Expense"}
+            {showForm ? t("Cancel") : t("Add Expense")}
           </Button>
         </div>
 
@@ -208,7 +210,7 @@ export default function Expenses() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
           <div className="p-4 bg-card border border-border rounded-lg">
             <div className="text-xs md:text-sm text-muted-foreground">
-              This Month
+              {t("This Month")}
             </div>
             <div className="text-xl md:text-2xl font-bold mt-2">
               {formatCurrency(monthlyTotal)}
@@ -219,25 +221,25 @@ export default function Expenses() {
                   getExpenseDateString(e).startsWith(currentMonth),
                 ).length
               }{" "}
-              expenses
+              {t("expenses")}
             </div>
           </div>
 
           <div className="p-4 bg-card border border-border rounded-lg">
             <div className="text-xs md:text-sm text-muted-foreground">
-              Total Expenses
+              {t("Total Expenses")}
             </div>
             <div className="text-xl md:text-2xl font-bold mt-2">
               {formatCurrency(totalExpenses)}
             </div>
             <div className="mt-3 text-xs text-muted-foreground">
-              {expenses.length} expenses recorded
+              {expenses.length} {t("expenses recorded")}
             </div>
           </div>
 
           <div className="p-4 bg-card border border-border rounded-lg">
             <div className="text-xs md:text-sm text-muted-foreground">
-              Average per Expense
+              {t("Average per Expense")}
             </div>
             <div className="text-xl md:text-2xl font-bold mt-2">
               {formatCurrency(
@@ -245,7 +247,7 @@ export default function Expenses() {
               )}
             </div>
             <div className="mt-3 text-xs text-muted-foreground">
-              All time average
+              {t("All time average")}
             </div>
           </div>
         </div>
@@ -254,16 +256,16 @@ export default function Expenses() {
         <Dialog open={showForm} onOpenChange={setShowForm}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>New Expense</DialogTitle>
+              <DialogTitle>{t("New Expense")}</DialogTitle>
               <DialogDescription>
-                Add a new expense to track your costs.
+                {t("Add a new expense to track your costs")}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs md:text-sm font-medium mb-2">
-                    Description
+                    {t("Description")}
                   </label>
                   <input
                     type="text"
@@ -271,13 +273,13 @@ export default function Expenses() {
                     onChange={(e) =>
                       setFormData({ ...formData, description: e.target.value })
                     }
-                    placeholder="e.g., Monthly electricity bill"
+                    placeholder={t("e.g., Monthly electricity bill")}
                     className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
                 <div>
                   <label className="block text-xs md:text-sm font-medium mb-2">
-                    Amount
+                    {t("Amount")}
                   </label>
                   <input
                     type="number"
@@ -295,7 +297,7 @@ export default function Expenses() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs md:text-sm font-medium mb-2">
-                    Category
+                    {t("Category")}
                   </label>
                   <select
                     value={formData.category}
@@ -313,7 +315,7 @@ export default function Expenses() {
                 </div>
                 <div>
                   <label className="block text-xs md:text-sm font-medium mb-2">
-                    Date
+                    {t("Date")}
                   </label>
                   <input
                     type="date"
@@ -325,7 +327,6 @@ export default function Expenses() {
                   />
                 </div>
               </div>
-
               <div className="flex gap-2 justify-end">
                 <DialogClose asChild>
                   <Button
@@ -334,11 +335,11 @@ export default function Expenses() {
                     size="sm"
                     className="text-xs md:text-sm"
                   >
-                    Cancel
+                    {t("Cancel")}
                   </Button>
                 </DialogClose>
                 <Button type="submit" size="sm" className="text-xs md:text-sm">
-                  Save Expense
+                  {t("Save Expense")}
                 </Button>
               </div>
             </form>
@@ -349,7 +350,7 @@ export default function Expenses() {
         {expensesByCategory.length > 0 && (
           <div className="mb-8">
             <h3 className="font-semibold text-sm md:text-base mb-4">
-              Expenses by Category
+              {t("Expenses by Category")}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {expensesByCategory.map((cat) => (
@@ -364,7 +365,7 @@ export default function Expenses() {
                         <div className="font-semibold text-sm">{cat.label}</div>
                         <div className="text-xs text-muted-foreground">
                           {expenses.filter((e) => e.category === cat.id).length}{" "}
-                          transactions
+                          {t("transactions")}
                         </div>
                       </div>
                     </div>
@@ -389,7 +390,7 @@ export default function Expenses() {
             <div className="p-8 text-center">
               <div className="text-2xl mb-2">📊</div>
               <p className="text-sm text-muted-foreground">
-                No expenses recorded yet. Add your first expense to get started.
+                {t("No expenses recorded yet. Add your first expense to get started")}
               </p>
             </div>
           ) : (
@@ -399,13 +400,13 @@ export default function Expenses() {
                   <thead className="border-b border-border bg-accent/50">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs md:text-sm font-semibold">
-                        Date
+                        {t("Date")}
                       </th>
                       <th className="px-4 py-3 text-left text-xs md:text-sm font-semibold">
-                        Description
+                        {t("Description")}
                       </th>
                       <th className="px-4 py-3 text-left text-xs md:text-sm font-semibold">
-                        Category
+                        {t("Category")}
                       </th>
                       <th className="px-4 py-3 text-right text-xs md:text-sm font-semibold">
                         Amount

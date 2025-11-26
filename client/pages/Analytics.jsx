@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
+import { useTranslation } from "@/hooks/useTranslation";
 import {
   LineChart,
   Line,
@@ -23,6 +24,7 @@ import { on } from "@/lib/eventBus";
 const COLORS = ["#2D7C35", "#F97316", "#06B6D4"];
 
 export default function Analytics() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState(null);
   const [topSelling, setTopSelling] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -149,7 +151,7 @@ export default function Analytics() {
     return (
       <Layout>
         <div className="max-w-7xl mx-auto p-8 text-center text-muted-foreground">
-          Loading analytics...
+          {t("Loading analytics")}...
         </div>
       </Layout>
     );
@@ -160,9 +162,9 @@ export default function Analytics() {
     <Layout>
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-extrabold">Analytics</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold">{t("Analytics")}</h1>
           <p className="mt-1 text-xs md:text-sm text-muted-foreground">
-            Comprehensive business metrics and sales performance analysis
+            {t("Comprehensive business metrics and sales performance analysis")}
           </p>
         </div>
 
@@ -170,31 +172,31 @@ export default function Analytics() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
           <div className="p-4 bg-card border border-border rounded-lg">
             <div className="text-xs md:text-sm text-muted-foreground">
-              Total Annual Sales
+              {t("Total Annual Sales")}
             </div>
             <div className="text-xl md:text-2xl font-bold mt-2">
               {formatCurrencyFull(totalSales)}
             </div>
             <div className="mt-3 text-xs text-muted-foreground">
-              Across 12 months
+              {t("Across 12 months")}
             </div>
           </div>
 
           <div className="p-4 bg-card border border-border rounded-lg">
             <div className="text-xs md:text-sm text-muted-foreground">
-              Average Monthly Sales
+              {t("Average Monthly Sales")}
             </div>
             <div className="text-xl md:text-2xl font-bold mt-2">
               {formatCurrencyFull(avgMonthlySales)}
             </div>
             <div className="mt-3 text-xs text-muted-foreground">
-              Year to date average
+              {t("Year to date average")}
             </div>
           </div>
 
           <div className="p-4 bg-card border border-border rounded-lg">
             <div className="text-xs md:text-sm text-muted-foreground">
-              Best Performing Month
+              {t("Best Performing Month")}
             </div>
             <div className="text-xl md:text-2xl font-bold mt-2">
               {formatCurrencyFull(highestMonth.sales)}
@@ -209,7 +211,7 @@ export default function Analytics() {
 
           <div className="p-4 bg-card border border-border rounded-lg">
             <div className="text-xs md:text-sm text-muted-foreground">
-              Lowest Performing Month
+              {t("Lowest Performing Month")}
             </div>
             <div className="text-xl md:text-2xl font-bold mt-2">
               {formatCurrencyFull(lowestMonth.sales)}
